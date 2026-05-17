@@ -1,0 +1,70 @@
+.appHeader {
+  flex: 0 0 auto;
+  height: var(--app-header-h);
+  min-height: var(--app-header-h);
+  background: var(--shell-gradient);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 25;
+  display: flex;
+  align-items: center;
+}
+
+.appHeaderInner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px 0 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.appHeaderIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(110, 231, 255, 0.95);
+  flex-shrink: 0;
+}
+
+.appHeaderIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.appHeaderText {
+  min-width: 0;
+}
+
+.appHeaderTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.96);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.appHeaderSubtitle {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.62);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+  .appHeaderInner {
+    padding: 0 16px 0 0;
+  }
+}

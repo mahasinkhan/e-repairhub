@@ -1,0 +1,42 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pageHeader {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.2px;
+}
+
+.pageSubtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.pageCard {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.pageCardTitle {
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.pageCardText {
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+

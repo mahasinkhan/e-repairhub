@@ -1,0 +1,24 @@
+/* Normal stacked homepage layout */
+.home-landing {
+  width: 100%;
+  background: #ffffff;
+}
+
+.home-landing__main {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 18px;
+}
+
+/* Give consistent horizontal breathing room so sections don't feel left-shifted */
+.home-landing__main > * {
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .home-landing__main {
+    max-width: 1280px;
+    padding: 0 32px;
+  }
+}
+

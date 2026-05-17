@@ -1,0 +1,19 @@
+{
+  "name": "e-repairhub",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "backend"
+  ],
+  "scripts": {
+    "build:backend": "npm run build -w @e-repairhub/backend",
+    "start:backend": "npm run start -w @e-repairhub/backend",
+    "dev:backend": "npm run dev -w @e-repairhub/backend",
+    "dev:admin": "npm run dev -w admin-app",
+    "dev:franchise": "npm run dev -w franchise-app",
+    "dev:delivery": "npm run dev -w delivery-app",
+    "dev:customer": "npm run dev -w customer-app",
+    "seed:users": "npm run seed:users -w @e-repairhub/backend"
+  }
+}

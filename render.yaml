@@ -1,0 +1,30 @@
+# Render Blueprint — E-RepairHub API (monorepo root)
+# Dashboard: New → Blueprint → connect this repo, or create a Web Service manually.
+# Set MONGO_URI, JWT_SECRET, CLIENT_ORIGINS (and Cloudinary vars if needed) in Render env.
+
+services:
+  - type: web
+    name: e-repairhub-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build -w @e-repairhub/backend
+    startCommand: npm run start -w @e-repairhub/backend
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22.13.5"
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      # Required — set real values in Render dashboard (sync: false keeps secrets out of git)
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLIENT_ORIGINS
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

@@ -1,0 +1,4 @@
+/* Offset page content below fixed header on all routes except home */
+.app-main--offset {
+  padding-top: var(--header-h);
+}

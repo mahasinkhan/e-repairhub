@@ -1,0 +1,135 @@
+/* ===============================
+   FAQ SECTION (NO OVERLAP)
+   Prefix: faq-section__
+================================ */
+
+.faq-section {
+  width: 100%;
+  padding: 80px 40px;
+   background: #f4f6fb;
+  box-sizing: border-box;
+}
+
+.faq-section__container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 50px;
+}
+
+/* LEFT */
+.faq-section__left {
+  flex: 1;
+}
+
+.faq-section__title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 30px;
+  line-height: 1.3;
+}
+
+/* FAQ LIST */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* ITEM */
+.faq-item {
+  background: #ffffff;
+  border-radius: 40px;
+  padding: 6px 18px;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.faq-item:hover {
+  box-shadow: 0 8px 18px rgba(0,0,0,0.1);
+}
+
+/* QUESTION */
+.faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  border-radius: 40px;
+}
+
+/* ICON */
+.faq-icons {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+}
+
+.faq-ico {
+  position: absolute;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.faq-ico--plus {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.faq-item:hover .faq-ico--plus {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.faq-item:hover .faq-ico--minus {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.faq-question svg {
+  color: var(--accent, #e8c97e);
+  font-size: 14px;
+}
+
+/* ANSWER */
+.faq-answer {
+  margin-top: 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-2px);
+  transition: max-height 220ms ease, opacity 220ms ease, transform 220ms ease, margin-top 220ms ease;
+}
+
+.faq-item:hover .faq-answer {
+  margin-top: 10px;
+  max-height: 120px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* RIGHT IMAGE */
+.faq-section__right {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.faq-section__right img {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 8px;
+  object-fit: cover;
+}

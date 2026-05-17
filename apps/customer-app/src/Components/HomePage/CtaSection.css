@@ -1,0 +1,95 @@
+/* ===============================
+   CTA SECTION (PREMIUM UI)
+   Prefix: cta-section__
+================================ */
+
+.cta-section {
+  position: relative;
+  width: 100%;
+  padding: 100px 20px;
+  /* Light accent tint (matches header CTA) */
+  background: #f4f6fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  border-radius: 160px;
+}
+
+/* Glow overlay */
+.cta-section__overlay {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background: rgba(232, 201, 126, 0.20);
+  filter: blur(120px);
+  top: -100px;
+  left: -100px;
+}
+
+/* Content */
+.cta-section__content {
+  position: relative;
+  max-width: 700px;
+  color: var(--dark-blue, #0b1f3a);
+  z-index: 2;
+}
+
+/* Heading */
+.cta-section__content h2 {
+  font-size: 40px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* Text */
+.cta-section__content p {
+  font-size: 16px;
+  margin-bottom: 35px;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+/* Buttons */
+.cta-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* Base button */
+.cta-btn {
+  padding: 14px 28px;
+  border-radius: 30px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Primary button */
+.cta-btn.primary {
+  background: var(--accent, #e8c97e);
+  color: var(--dark-blue, #0b1f3a);
+}
+
+.cta-btn.primary:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+/* Secondary button */
+.cta-btn.secondary {
+  background: transparent;
+  border: 2px solid rgba(11, 31, 58, 0.35);
+  color: var(--dark-blue, #0b1f3a);
+}
+
+.cta-btn.secondary:hover {
+  background: rgba(232, 201, 126, 0.28);
+  color: var(--dark-blue, #0b1f3a);
+  transform: translateY(-4px) scale(1.05);
+}

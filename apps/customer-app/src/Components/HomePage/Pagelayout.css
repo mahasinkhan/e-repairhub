@@ -1,0 +1,42 @@
+/* ── Page root ────────────────────────────────────────────────────────────
+   The trick:
+   - .sticky-hero-wrap  → position: sticky; top: 0  → hero stays pinned
+   - .sections-above    → position: relative; z-index above hero
+   When the user scrolls, .sections-above travels up and covers the hero.
+   The hero itself never moves — it just gets buried under the new section.
+───────────────────────────────────────────────────────────────────────── */
+
+.page-root {
+  position: relative;
+  width: 100%;
+}
+
+/* ── Sticky wrapper — pins the hero to the top of the viewport ── */
+.sticky-hero-wrap {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 1;               /* sits BELOW the incoming sections */
+  overflow: hidden;
+}
+
+/* ── Sections container — stacks on top of the sticky hero ── */
+.sections-above {
+  position: relative;
+  z-index: 2;               /* sits ABOVE the hero */
+  width: 100%;
+}
+
+/* ── First child section gets a top shadow so it feels like it's lifting over ── */
+.sections-above > *:first-child {
+  box-shadow:
+    0 -24px 60px rgba(0, 0, 0, 0.18),
+    0 -4px  16px rgba(0, 0, 0, 0.10);
+}
+
+/* Optional: rounded top corners on the first section for a "sheet" feel */
+.sections-above > *:first-child {
+  border-radius: 28px 28px 0 0;
+  overflow: hidden;
+}

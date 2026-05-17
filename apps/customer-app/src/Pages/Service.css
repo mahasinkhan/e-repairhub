@@ -1,0 +1,9 @@
+.service-container,
+.service-container * {
+  font-weight: 400;
+}
+
+.service-container strong {
+  font-weight: 500;
+}
+

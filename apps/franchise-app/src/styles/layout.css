@@ -1,0 +1,29 @@
+.layout-root {
+  --sidebar-w: var(--sidebar-expanded);
+  min-height: 100%;
+}
+
+.layout-root.sidebar-collapsed {
+  --sidebar-w: var(--sidebar-collapsed);
+}
+
+@media (max-width: 900px) {
+  .layout-root {
+    --sidebar-w: 0px;
+  }
+
+  .layout-root.sidebar-collapsed {
+    --sidebar-w: 0px;
+  }
+}
+
+.layout-main {
+  margin-left: var(--sidebar-w);
+  padding-top: var(--navbar-height);
+  min-height: 100vh;
+  transition: margin-left var(--transition);
+}
+
+.layout-scroll {
+  min-height: calc(100vh - var(--navbar-height));
+}

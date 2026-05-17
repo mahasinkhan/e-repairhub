@@ -1,0 +1,266 @@
+
+
+.safe {
+  padding: 20px 4px 96px;
+    background: #f4f6fb;
+  overflow: hidden;
+}
+
+/* ── Head ── */
+.safe-head {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.safe-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #2563eb;
+  margin-bottom: 14px;
+}
+
+.safe-eyebrow::before,
+.safe-eyebrow::after {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 1px;
+  background: #2563eb;
+  opacity: 0.4;
+}
+
+.safe-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(28px, 3.5vw, 42px);
+  line-height: 1.1;
+  color: #0a0a0a;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.safe-title em {
+  font-style: normal;
+  color: #0AB4FF;
+}
+
+.safe-subtitle {
+  font-size: 14.5px;
+  color: #64748b;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* ── Layout ── */
+.safe-wrap {
+  max-width: 1060px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 44px;
+  align-items: center;
+}
+
+/* ── Left: 3D circle ── */
+.safe-left {
+  display: flex;
+  justify-content: flex-start;
+  perspective: 1200px;
+}
+
+/* ── Left: 3D IMAGE (NO CIRCLE) ── */
+
+.safe-circle {
+  width: 480px;
+  height: 420px; /* rectangle look */
+  border-radius: 18px; /* circle hata diya */
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  position: relative;
+
+  transform-style: preserve-3d;
+
+  /* 🔥 side tilted look */
+  transform: rotateY(-18deg) rotateX(6deg) translateZ(0);
+
+  transition: transform 520ms cubic-bezier(.25,.8,.25,1),
+              box-shadow 520ms cubic-bezier(.25,.8,.25,1),
+              filter 520ms cubic-bezier(.25,.8,.25,1);
+
+  box-shadow:
+    0 30px 80px rgba(2, 6, 23, 0.18),
+    0 12px 30px rgba(2, 6, 23, 0.12);
+
+  will-change: transform;
+}
+
+/* image depth */
+.safe-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+
+  transform: translateZ(30px) scale(1.05);
+  transition: transform 520ms cubic-bezier(.25,.8,.25,1);
+}
+
+/* light reflection effect */
+.safe-circle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    rgba(255,255,255,0.4),
+    transparent 40%
+  );
+  opacity: 0.5;
+  pointer-events: none;
+  transform: translateZ(40px);
+}
+
+/* 🔥 HOVER EFFECT */
+@media (hover: hover) and (pointer: fine) {
+  .safe-circle:hover {
+    transform: rotateY(-4deg) rotateX(1deg) translateY(-10px) scale(1.05);
+    box-shadow:
+      0 45px 100px rgba(2, 6, 23, 0.25),
+      0 18px 40px rgba(2, 6, 23, 0.15);
+  }
+
+  .safe-circle:hover img {
+    transform: translateZ(50px) scale(1.08);
+  }
+}
+
+/* highlight sheen to sell 3D */
+.safe-circle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(700px 320px at 18% 10%, rgba(255, 255, 255, 0.38), transparent 55%);
+  opacity: 0.6;
+  pointer-events: none;
+  transform: translateZ(26px);
+}
+
+
+
+/* ── Right: cards grid ── */
+.safe-right {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.safe-card {
+  background: #fff;
+  border: 1px solid #f1f5f9;
+  border-radius: 18px;
+  padding: 26px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: default;
+  box-shadow: none;
+  transition: border-color 0.22s, background 0.22s, transform 0.22s ease;
+}
+
+.safe-card:hover {
+  border: 2px solid #e8c97e;
+ 
+  box-shadow: none;
+}
+
+.safe-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.safe-card-icon svg {
+  width: 22px;
+  height: 22px;
+  transition: transform 650ms ease;
+  transform-origin: 50% 50%;
+}
+
+.ic-blue   { background: #eff6ff; color: #2563eb; }
+.ic-violet { background: #f5f3ff; color: #7c3aed; }
+.ic-teal   { background: #f0fdfa; color: #0d9488; }
+.ic-green  { background: #f0fdf4; color: #16a34a; }
+
+.safe-card h3 {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  text-align: center;
+  transition: transform 220ms ease;
+}
+
+.safe-card p {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #94a3b8;
+  line-height: 1.55;
+  margin: 0;
+  text-align: center;
+  transition: transform 220ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .safe-card:hover .safe-card-icon svg {
+    transform: rotate(360deg);
+  }
+
+  .safe-card:hover h3,
+  .safe-card:hover p {
+    transform: translateY(-2px) scale(1.02);
+  }
+}
+
+/* ── Trust bar ── */
+.safe-trust {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+}
+
+.safe-trust-dot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.safe-trust span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* ── Responsive ── */
+@media (max-width: 820px) {
+  .safe-wrap { grid-template-columns: 1fr; gap: 40px; }
+  .safe-circle { width: 260px; height: 260px; }
+}
+
+@media (max-width: 480px) {
+  .safe { padding: 52px 16px 72px; }
+  .safe-right { grid-template-columns: 1fr; }
+}

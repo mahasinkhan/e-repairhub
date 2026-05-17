@@ -1,0 +1,311 @@
+/* repair.css */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.repair-page {
+  width: 100%;
+  min-height: 100vh;
+
+  padding: 20px 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.repair-header {
+  padding: 0 24px;
+  margin-bottom: 22px;
+}
+
+.repair-header h1 {
+  font-size: 28px;
+  color: #111827;
+  margin-bottom: 5px;
+}
+
+.repair-header p {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* =========================
+   CARDS
+========================= */
+
+.repair-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+
+  padding: 0 24px;
+  margin-bottom: 24px;
+}
+
+.repair-card {
+  background: white;
+  border-radius: 18px;
+  padding: 20px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  border: 1px solid #ececec;
+  transition: 0.3s;
+}
+
+.repair-card:hover {
+  transform: translateY(-2px);
+}
+
+.repair-card h3 {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.repair-card h2 {
+  font-size: 26px;
+  color: #111827;
+}
+
+.repair-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pending-card .repair-icon {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.repairing-card .repair-icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.completed-card .repair-icon {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+/* =========================
+   SEARCH
+========================= */
+
+.repair-search {
+  margin: 0 24px 22px;
+
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 14px;
+
+  height: 52px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 0 16px;
+}
+
+.repair-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+
+/* =========================
+   TABLE
+========================= */
+
+.repair-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  background: white;
+
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.repair-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1100px;
+}
+
+.repair-table thead {
+  background: #fafafa;
+}
+
+.repair-table th {
+  text-align: left;
+  padding: 16px 22px;
+
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.repair-table td {
+  padding: 16px 22px;
+  border-top: 1px solid #f1f1f1;
+
+  font-size: 14px;
+  color: #111827;
+}
+
+.repair-table tbody tr:hover {
+  background: #fafafa;
+}
+
+/* =========================
+   CUSTOMER INFO
+========================= */
+
+.customer-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+
+  background: #ececec;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.customer-info h4 {
+  font-size: 14px;
+  margin-bottom: 3px;
+}
+
+.customer-info p {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* =========================
+   STATUS BADGE
+========================= */
+
+.status-badge {
+  padding: 8px 13px;
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.repairing {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.completed {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+/* =========================
+   STATUS SELECT
+========================= */
+
+.status-select {
+  border: 1px solid #ddd;
+  background: white;
+
+  height: 38px;
+  padding: 0 12px;
+
+  border-radius: 10px;
+  outline: none;
+
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* =========================
+   VIEW BUTTON
+========================= */
+
+.view-btn {
+  border: none;
+  background: #111827;
+  color: white;
+
+  padding: 9px 14px;
+  border-radius: 10px;
+
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  cursor: pointer;
+  transition: 0.3s;
+
+  font-size: 13px;
+}
+
+.view-btn:hover {
+  opacity: 0.9;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 992px) {
+
+  .repair-cards {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+@media (max-width: 768px) {
+
+  .repair-header {
+    padding: 0 18px;
+  }
+
+  .repair-cards {
+    padding: 0 18px;
+  }
+
+  .repair-search {
+    margin: 0 18px 20px;
+  }
+
+  .repair-table th,
+  .repair-table td {
+    padding: 15px 18px;
+  }
+
+}

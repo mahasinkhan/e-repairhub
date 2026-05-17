@@ -1,0 +1,369 @@
+/* ─── Variables ──────────────────────────────────────────────────────── */
+:root {
+  --b-navy:      #0b1f3a;
+  --b-gold:      #e8c97e;
+  --b-gold-soft: rgba(232, 201, 126, 0.14);
+  --b-gold-ring: rgba(232, 201, 126, 0.35);
+  --b-border:    rgba(0, 0, 0, 0.07);
+  --b-muted:     #888888;
+  --b-card-bg:   #f4f6fb;
+}
+
+/* ─── Section ─────────────────────────────────────────────────────────── */
+.brands {
+  background: #ffffff;
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px 56px 120px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Dot-grid texture */
+.brands__bg-dots {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(11,31,58,0.055) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Gold radial wash top-right corner */
+.brands::after {
+  content: '';
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 480px; height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,201,126,0.1) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Header ──────────────────────────────────────────────────────────── */
+.brands__header {
+  text-align: center;
+  margin-bottom: 72px;
+  position: relative;
+  z-index: 1;
+}
+
+.brands__eyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--b-navy);
+  background: var(--b-gold-soft);
+  border: 1px solid var(--b-gold-ring);
+  border-radius: 30px;
+  padding: 5px 18px;
+  margin-bottom: 18px;
+}
+
+.brands__heading {
+  font-weight: 800;
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  color: var(--b-navy);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 14px;
+}
+
+.brands__accent {
+  color: var(--b-navy);
+  position: relative;
+  display: inline-block;
+}
+.brands__accent::after {
+  content: '';
+  position: absolute;
+  bottom: -4px; left: 0;
+  width: 100%; height: 3px;
+  background: linear-gradient(90deg, var(--b-gold), rgba(232,201,126,0.2));
+  border-radius: 2px;
+}
+
+.brands__sub {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--b-muted);
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.78;
+}
+
+/* ─── Body ────────────────────────────────────────────────────────────── */
+.brands__body {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 0 52px;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  align-items: start;
+}
+
+/* ─── Sidebar ─────────────────────────────────────────────────────────── */
+.brands__sidebar {
+  position: relative;
+}
+
+@media (min-width: 901px) {
+  .brands__sidebar {
+    position: sticky;
+    top: calc(var(--header-h, 70px) + 20px);
+    align-self: start;
+    height: fit-content;
+  }
+}
+
+.brands__filter-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--b-muted);
+  margin-bottom: 14px;
+  padding-left: 14px;
+}
+
+.brands__filter-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.brands__filter-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  text-align: left;
+}
+.brands__filter-btn:hover {
+  background: #f4f6fb;
+  border-color: var(--b-border);
+}
+.brands__filter-btn--on {
+  background: var(--b-gold-soft);
+  border-color: var(--b-gold-ring);
+}
+
+.brands__filter-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #dddddd;
+  flex-shrink: 0;
+  transition: background 0.22s, box-shadow 0.22s;
+}
+.brands__filter-btn--on .brands__filter-pip {
+  background: var(--b-gold);
+  box-shadow: 0 0 0 3px rgba(232,201,126,0.2);
+}
+
+.brands__filter-name {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #444444;
+  flex: 1;
+  transition: color 0.22s;
+}
+.brands__filter-btn--on .brands__filter-name {
+  color: var(--b-navy);
+  font-weight: 600;
+}
+
+.brands__filter-count {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #eeeeee;
+  color: #888888;
+  border-radius: 20px;
+  padding: 1px 8px;
+  min-width: 22px;
+  text-align: center;
+  transition: all 0.22s;
+}
+.brands__filter-btn--on .brands__filter-count {
+  background: rgba(11,31,58,0.1);
+  color: var(--b-navy);
+}
+
+/* Vertical gold divider between sidebar and grid */
+.brands__divider {
+  position: absolute;
+  top: 0; right: -26px;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--b-gold-ring) 20%,
+    var(--b-gold-ring) 80%,
+    transparent
+  );
+}
+
+/* ─── Grid ────────────────────────────────────────────────────────────── */
+.brands__grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 28px 20px;
+  align-content: start;
+  min-height: 120px;
+}
+
+/* ─── Brand card ──────────────────────────────────────────────────────── */
+.brand-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  position: relative;
+  padding: 10px 6px 16px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  max-width: 160px;
+  margin: 0 auto;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background  0.25s ease,
+    border-color 0.25s ease,
+    transform   0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.brand-card:hover {
+  background: var(--b-card-bg);
+  border-color: var(--b-border);
+  transform: translateY(-6px);
+}
+
+/* Popular badge */
+.brand-card__popular {
+  position: absolute;
+  top: 6px; right: 6px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--b-navy);
+  background: var(--b-gold);
+  border-radius: 20px;
+  padding: 2px 7px;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(232,201,126,0.35);
+}
+
+/* Circle wrap */
+.brand-card__wrap {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+}
+
+/* Animated ring on hover */
+.brand-card__ring {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  pointer-events: none;
+}
+.brand-card:hover .brand-card__ring {
+  border-color: var(--b-gold);
+  box-shadow: 0 0 18px rgba(232,201,126,0.22);
+  animation: ringRotate 4s linear infinite;
+}
+@keyframes ringRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Circle */
+.brand-card__circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid var(--b-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 16px;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.07);
+  transition: border-color 0.28s, box-shadow 0.28s;
+}
+.brand-card:hover .brand-card__circle {
+  border-color: rgba(232,201,126,0.45);
+  box-shadow: 0 8px 26px rgba(0,0,0,0.1), 0 0 0 4px rgba(232,201,126,0.1);
+}
+
+/* Brand image */
+.brand-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.brand-card:hover .brand-card__img {
+  transform: scale(1.12);
+}
+
+/* Brand name */
+.brand-card__name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--b-navy);
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .brands { padding: 72px 24px 80px; }
+  .brands__body {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .brands__divider { display: none; }
+  .brands__filter-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .brands__filter-btn { width: auto; padding: 8px 14px; }
+  .brands__grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 18px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .brands__heading { font-size: 1.9rem; }
+  .brands__grid { grid-template-columns: repeat(3, 1fr); gap: 16px 8px; }
+  .brand-card__wrap { width: 72px; height: 72px; }
+  .brand-card__circle { padding: 12px; }
+}
