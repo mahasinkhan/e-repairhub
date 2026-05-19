@@ -5,8 +5,10 @@ import { defineConfig } from "vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Standalone Vercel deploy uses "/" (domain root). Set VITE_BASE_PATH=/franchise/ only if
+// the app is served under that subpath on the same host as other panels.
 export default defineConfig({
-  base: "/franchise/",
+  base: process.env.VITE_BASE_PATH || "/",
   plugins: [react()],
   server: {
     port: 5174,
