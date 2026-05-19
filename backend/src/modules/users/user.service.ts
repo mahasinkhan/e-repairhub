@@ -266,11 +266,16 @@ export const DEMO_USERS: Array<{
   },
 ];
 
-/** On server start: create any missing demo user by email (does not reset existing passwords). */
+/** On server start: create any missing demo user (does not reset existing passwords). */
 export async function ensureDefaultUsers(): Promise<void> {
   let created = 0;
   for (const u of DEMO_USERS) {
-    const exists = await User.exists({ email: u.email.toLowerCase() });
+    const exists = await User.exists({
+      $or: [
+        { email: u.email.toLowerCase() },
+        { username: u.username.toLowerCase() },
+      ],
+    });
     if (exists) continue;
 
     const hashed = await bcrypt.hash(u.password, 12);
@@ -293,7 +298,7 @@ export async function ensureDefaultUsers(): Promise<void> {
   }
 
   if (created === 0) {
-    console.log("[seed] All demo emails already exist. To reset passwords run: npm run seed:users");
+    console.log("[seed] All demo users already exist. To reset passwords run: npm run seed:users");
   } else {
     console.log(
       `[seed] Added ${created} user(s). Passwords are not printed here; run: npm run seed:users (backend) to see the login table.`
@@ -309,7 +314,12 @@ export async function upsertDemoUsers(): Promise<void> {
   for (const u of DEMO_USERS) {
     const hashed = await bcrypt.hash(u.password, 12);
     await User.findOneAndUpdate(
-      { email: u.email.toLowerCase() },
+      {
+        $or: [
+          { email: u.email.toLowerCase() },
+          { username: u.username.toLowerCase() },
+        ],
+      },
       {
         $set: {
           name: u.name,
