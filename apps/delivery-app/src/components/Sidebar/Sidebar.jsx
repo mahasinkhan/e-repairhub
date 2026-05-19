@@ -1,9 +1,10 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   MdCheckCircle,
   MdClose,
   MdDashboard,
   MdLocalShipping,
+  MdLogout,
   MdNotificationsNone,
   MdOutlineAssignmentTurnedIn,
   MdOutlineInventory2,
@@ -26,6 +27,7 @@ function NavIcon({ name }) {
 }
 
 export default function Sidebar({ isOpen, onClose }) {
+  const navigate = useNavigate()
   const nav = [
     { to: '.', label: 'Dashboard', icon: 'grid', end: true },
     { to: 'pickup-tasks', label: 'Pickup Tasks', icon: 'pickup' },
@@ -36,6 +38,14 @@ export default function Sidebar({ isOpen, onClose }) {
   ]
 
   const sidebarClass = `sidebar ${isOpen ? 'sidebarOpen' : ''}`
+
+  function handleLogout() {
+    if (!window.confirm('Sign out of the delivery panel?')) return
+    onClose?.()
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    navigate('/login', { replace: true })
+  }
 
   return (
     <>
@@ -77,6 +87,12 @@ export default function Sidebar({ isOpen, onClose }) {
             <div className="footerTitle">Today</div>
             <div className="footerText">Keep deliveries moving smoothly.</div>
           </div>
+          <button type="button" className="menuItem logoutBtn" onClick={handleLogout}>
+            <span className="menuIcon">
+              <MdLogout className="menuIconSvg" aria-hidden />
+            </span>
+            <span className="menuLabel">Logout</span>
+          </button>
         </div>
       </aside>
 

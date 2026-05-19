@@ -15,7 +15,9 @@ export default function Login() {
     setLoading(true);
     try {
       if (role !== EXPECTED_ROLE) {
-        setError("Invalid role for this panel. Choose Delivery or open the correct portal.");
+        setError(
+          "Invalid role for this panel. Choose Delivery or open the correct portal."
+        );
         return;
       }
       const { token, user } = await login({ emailOrUsername, password, role });
@@ -27,7 +29,9 @@ export default function Login() {
       localStorage.setItem("user", JSON.stringify(user));
       navigate("/", { replace: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Login failed. Please try again.");
+      setError(
+        e instanceof Error ? e.message : "Login failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }

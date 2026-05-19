@@ -121,7 +121,7 @@ html, body { height: 100%; font-family: var(--font-body); background: var(--clr-
 
 .stat-card {
   border-radius: var(--radius-lg);
-  padding: 22px;
+  padding: 16px 20px;
   color: #fff;
   position: relative;
   overflow: hidden;
@@ -133,14 +133,14 @@ html, body { height: 100%; font-family: var(--font-body); background: var(--clr-
   content: '';
   position: absolute;
   top: -30px; right: -30px;
-  width: 120px; height: 120px;
+  width: 100px; height: 100px;
   border-radius: 50%;
   background: rgba(255,255,255,.12);
 }
 .stat-card::after {
   content: '';
   position: absolute;
-  bottom: -20px; left: 50%;
+  bottom: -30px; left: 40%;
   width: 90px; height: 90px;
   border-radius: 50%;
   background: rgba(255,255,255,.07);
@@ -154,14 +154,14 @@ html, body { height: 100%; font-family: var(--font-body); background: var(--clr-
 .stat-top { display: flex; justify-content: space-between; align-items: flex-start; }
 .stat-info { display: flex; flex-direction: column; gap: 4px; z-index: 1; }
 .stat-label { font-size: 12px; font-weight: 500; opacity: .85; text-transform: uppercase; letter-spacing: .5px; }
-.stat-value { font-family: var(--font-head); font-size: 38px; font-weight: 800; line-height: 1; z-index: 1; }
+.stat-value { font-family: var(--font-head); font-size: 28px; font-weight: 800; line-height: 1; z-index: 1; }
 .stat-sub { font-size: 12px; opacity: .75; }
 .stat-icon-wrap { z-index: 1; opacity: .95; display: flex; align-items: center; justify-content: center; }
 .stat-svg {
-  width: 34px;
-  height: 34px;
+  width: 24px;
+  height: 24px;
 }
-.stat-pct { margin-top: 14px; font-size: 12px; font-weight: 600; opacity: .9; display: flex; align-items: center; gap: 4px; }
+.stat-pct { margin-top: 10px; font-size: 11px; font-weight: 600; opacity: .9; display: flex; align-items: center; gap: 4px; }
 .trend-ico {
   width: 16px;
   height: 16px;

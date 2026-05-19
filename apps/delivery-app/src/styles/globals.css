@@ -1,20 +1,20 @@
 /* Global app foundation (plain CSS) */
 :root {
-  --bg: #0b1220;
-  --panel: rgba(255, 255, 255, 0.06);
-  --panel-2: rgba(255, 255, 255, 0.08);
-  --border: rgba(255, 255, 255, 0.12);
-  --text: rgba(255, 255, 255, 0.92);
-  --muted: rgba(255, 255, 255, 0.70);
-  --brand: #6ee7ff;
-  --brand-2: #7c5cff;
-  --shadow: 0 14px 50px rgba(0, 0, 0, 0.55);
-  --radius: 16px;
-  /* Sidebar + app header (same shell) */
+  --bg: #f8fafc; /* slate-50 */
+  --panel: #ffffff;
+  --panel-2: #f1f5f9; /* slate-100 */
+  --border: #e2e8f0; /* slate-200 */
+  --text: #0f172a; /* slate-900 */
+  --muted: #64748b; /* slate-500 */
+  --brand: #2563eb; /* blue-600 (Admin Brand Color) */
+  --brand-2: #1d4ed8; /* blue-700 */
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --radius: 8px;
+  /* Reverting to the original dark blue gradient for Sidebar/Header */
   --shell-gradient: linear-gradient(165deg, #162045 0%, #0d1b3e 38%, #0a1428 100%);
   --app-header-h: 64px;
   /* Space between fixed sidebar and main column */
-  --main-sidebar-gutter: 24px;
+  --main-sidebar-gutter: 0px;
 }
 
 *,
@@ -33,10 +33,7 @@ body {
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
     Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   color: var(--text);
-  background:
-    radial-gradient(1000px 500px at 15% 10%, rgba(124, 92, 255, 0.30), transparent 55%),
-    radial-gradient(900px 450px at 85% 15%, rgba(110, 231, 255, 0.26), transparent 55%),
-    linear-gradient(180deg, #070b14, var(--bg));
+  background: var(--bg);
 }
 
 a {
@@ -45,7 +42,29 @@ a {
 
 /* Accessible focus ring */
 :focus-visible {
-  outline: 2px solid rgba(110, 231, 255, 0.9);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
+/* Quick Action Buttons - Simple and Interactive */
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.quick-action-btn:hover {
+  border-color: var(--brand);
+  background: #f1f5f9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
