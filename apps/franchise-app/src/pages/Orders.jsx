@@ -13,7 +13,7 @@ import {
   CheckCircle,
   X,
 } from "lucide-react";
-import { initialOrders } from "./order";
+import { initialOrders } from "./Order.js";
 
 const deliveryBoys = [
   { id: "DB-01", name: "Ravi Kumar" },
