@@ -1,47 +1,35 @@
-import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  MdCheckCircle,
-  MdClose,
-  MdDashboard,
-  MdLocalShipping,
-  MdLogout,
-  MdNotificationsNone,
-  MdOutlineAssignmentTurnedIn,
-  MdOutlineInventory2,
-  MdPersonOutline,
-} from 'react-icons/md'
+  LayoutDashboard,
+  ClipboardList,
+  ShieldCheck,
+  PackageSearch,
+  Truck,
+  Bell,
+  BarChart3,
+  UserCircle,
+  Settings,
+  LogOut,
+  PanelLeftClose,
+} from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router-dom'
 import './Sidebar.css'
 
-const iconMap = {
-  grid: MdDashboard,
-  pickup: MdOutlineInventory2,
-  delivery: MdLocalShipping,
-  completed: MdOutlineAssignmentTurnedIn,
-  bell: MdNotificationsNone,
-  user: MdPersonOutline,
-}
-
-function NavIcon({ name }) {
-  const Cmp = iconMap[name] ?? MdCheckCircle
-  return <Cmp className="menuIconSvg" aria-hidden />
-}
+const NAV = [
+  { to: '.',                  label: 'Dashboard',           icon: LayoutDashboard, end: true },
+  { to: 'tasks',              label: 'Tasks',               icon: ClipboardList },
+  { to: 'otp-verification',   label: 'OTP Verification',    icon: ShieldCheck },
+  { to: 'pickup-management',  label: 'Pickup Management',   icon: PackageSearch },
+  { to: 'delivery-management',label: 'Delivery Management', icon: Truck },
+  { to: 'notifications',      label: 'Notifications',       icon: Bell },
+  { to: 'performance-reports',label: 'Performance Reports', icon: BarChart3 },
+  { to: 'profile',            label: 'Profile',             icon: UserCircle },
+  { to: 'settings',           label: 'Settings',            icon: Settings },
+]
 
 export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate()
-  const nav = [
-    { to: '.', label: 'Dashboard', icon: 'grid', end: true },
-    { to: 'pickup-tasks', label: 'Pickup Tasks', icon: 'pickup' },
-    { to: 'delivery-tasks', label: 'Delivery Tasks', icon: 'delivery' },
-    { to: 'completed-tasks', label: 'Completed Tasks', icon: 'completed' },
-    { to: 'notifications', label: 'Notifications', icon: 'bell' },
-    { to: 'profile', label: 'Profile', icon: 'user' },
-  ]
 
-  const sidebarClass = `sidebar ${isOpen ? 'sidebarOpen' : ''}`
-
-  function handleLogout() {
-    if (!window.confirm('Sign out of the delivery panel?')) return
-    onClose?.()
+  function logout() {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     navigate('/login', { replace: true })
@@ -49,57 +37,66 @@ export default function Sidebar({ isOpen, onClose }) {
 
   return (
     <>
-      <aside className={sidebarClass} aria-label="Sidebar navigation">
-        <div className="sidebarHeader">
-          <div className="brand">
-            <span className="brandDot" />
-            <div className="brandText">
-              <div className="brandTitle">E-RepairHub</div>
-              <div className="brandSub">Delivery Console</div>
+      <aside
+        className={`dlv-sidebar${isOpen ? ' dlv-sidebarOpen' : ''}`}
+        aria-label="Sidebar navigation"
+      >
+        <div className="dlv-sidebarHeader">
+          <div className="dlv-brand">
+            <div className="dlv-brandLogo">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" stroke="#fff" strokeWidth="2" strokeLinejoin="round"/>
+                <path d="M2 7l10 5m0 0l10-5m-10 5v10" stroke="#fff" strokeWidth="2" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div className="dlv-brandText">
+              <p className="dlv-brandTitle">E-RepairHub</p>
+              <p className="dlv-brandSub">Delivery Panel</p>
             </div>
           </div>
-
-          <button type="button" className="closeBtn" onClick={onClose} aria-label="Close sidebar">
-            <MdClose />
+          <button
+            type="button"
+            className="dlv-closeBtn"
+            onClick={onClose}
+            aria-label="Close sidebar"
+          >
+            <PanelLeftClose className="dlv-closeBtnIcon" />
           </button>
         </div>
 
-        <nav className="menu">
-          {nav.map((item) => (
+        <nav className="dlv-nav" aria-label="Main navigation">
+          {NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) => `menuItem ${isActive ? 'menuItemActive' : ''}`}
+              key={to}
+              to={to}
+              end={end}
               onClick={onClose}
+              className={({ isActive }) =>
+                `dlv-navItem${isActive ? ' dlv-navItemActive' : ''}`
+              }
             >
-              <span className="menuIcon">
-                <NavIcon name={item.icon} />
+              <span className="dlv-navIconWrap">
+                <Icon className="dlv-navIcon" aria-hidden />
               </span>
-              <span className="menuLabel">{item.label}</span>
-              <span className="menuGlow" aria-hidden="true" />
+              <span className="dlv-navLabel">{label}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div className="sidebarFooter">
-          <div className="footerCard">
-            <div className="footerTitle">Today</div>
-            <div className="footerText">Keep deliveries moving smoothly.</div>
-          </div>
-          <button type="button" className="menuItem logoutBtn" onClick={handleLogout}>
-            <span className="menuIcon">
-              <MdLogout className="menuIconSvg" aria-hidden />
+        <div className="dlv-sidebarFooter">
+          <button type="button" onClick={logout} className="dlv-logoutBtn">
+            <span className="dlv-navIconWrap">
+              <LogOut className="dlv-navIcon" aria-hidden />
             </span>
-            <span className="menuLabel">Logout</span>
+            <span>Logout</span>
           </button>
         </div>
       </aside>
 
       <button
         type="button"
-        className={`backdrop ${isOpen ? 'backdropShow' : ''}`}
-        aria-label="Close sidebar backdrop"
+        className={`dlv-backdrop${isOpen ? ' dlv-backdropShow' : ''}`}
+        aria-label="Close sidebar"
         onClick={onClose}
       />
     </>

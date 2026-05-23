@@ -1,70 +1,168 @@
+/* Top bar — light theme (matches delivery panel design) */
 .appHeader {
   flex: 0 0 auto;
-  height: var(--app-header-h);
   min-height: var(--app-header-h);
-  background: var(--shell-gradient);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  background: #ffffff;
+  border-bottom: 1px solid #e8ecf1;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
   z-index: 25;
-  display: flex;
-  align-items: center;
 }
 
-.appHeaderInner {
+.appHeaderBar {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 20px 0 0;
-  width: 100%;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: var(--app-header-h);
+  padding: 0 24px;
+}
+
+.appHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
 }
 
-.appHeaderIcon {
+.appHeaderPageIcon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(110, 231, 255, 0.95);
-  flex-shrink: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1 0%, #5b5fef 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
 }
 
-.appHeaderIcon svg {
-  width: 22px;
-  height: 22px;
-}
-
-.appHeaderText {
-  min-width: 0;
-}
-
-.appHeaderTitle {
+.appHeaderPageTitle {
   margin: 0;
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.96);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.appHeaderSubtitle {
-  margin: 2px 0 0;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.62);
-  white-space: nowrap;
+.appHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-shrink: 0;
+}
+
+.appHeaderNotif {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  color: #475569;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.appHeaderNotif:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.appHeaderNotifBadge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  border: 2px solid #fff;
+  box-sizing: border-box;
+}
+
+.appHeaderProfile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.appHeaderAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   overflow: hidden;
-  text-overflow: ellipsis;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e2e8f0;
+}
+
+.appHeaderAvatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.appHeaderProfileText {
+  min-width: 0;
+}
+
+.appHeaderProfileName {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.appHeaderProfileRole {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  white-space: nowrap;
 }
 
 @media (max-width: 900px) {
-  .appHeaderInner {
-    padding: 0 16px 0 0;
+  .appHeaderBar {
+    padding: 0 16px;
+  }
+
+  .appHeaderProfileText,
+  .mobileTopBarActions .appHeaderProfileText {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .appHeaderPageTitle {
+    font-size: 1rem;
+  }
+
+  .appHeaderPageIcon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .appHeaderRight {
+    gap: 10px;
   }
 }

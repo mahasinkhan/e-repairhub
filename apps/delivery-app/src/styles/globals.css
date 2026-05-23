@@ -12,7 +12,7 @@
   --radius: 8px;
   /* Reverting to the original dark blue gradient for Sidebar/Header */
   --shell-gradient: linear-gradient(165deg, #162045 0%, #0d1b3e 38%, #0a1428 100%);
-  --app-header-h: 64px;
+  --app-header-h: 68px;
   /* Space between fixed sidebar and main column */
   --main-sidebar-gutter: 0px;
 }

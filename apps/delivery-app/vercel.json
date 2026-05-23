@@ -1,6 +1,0 @@
-{
-  "installCommand": "cd ../.. && npm ci",
-  "buildCommand": "cd ../.. && npm run build -w delivery-app",
-  "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
-}

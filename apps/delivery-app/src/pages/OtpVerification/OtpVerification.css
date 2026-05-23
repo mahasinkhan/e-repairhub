@@ -1,0 +1,519 @@
+/* ═══════════════════════════════════════════════
+   E-RepairHub · OTP Verification
+   Exact match to design image
+═══════════════════════════════════════════════ */
+
+.otp-root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 24px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ── Outer card container ── */
+.otp-outer {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* ── Back button ── */
+.otp-back-btn {
+  align-self: flex-start;
+  margin-bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.otp-back-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+/* ── Page title ── */
+.otp-page-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 24px;
+  text-align: center;
+  letter-spacing: -0.3px;
+}
+
+/* ═══════════════════════════════════════
+   PHONE ILLUSTRATION
+═══════════════════════════════════════ */
+.otp-phone-wrap {
+  position: relative;
+  width: 130px;
+  height: 190px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Glow blobs */
+.otp-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(28px);
+  pointer-events: none;
+  z-index: 0;
+}
+.otp-blob-1 {
+  width: 90px;
+  height: 90px;
+  background: rgba(59,130,246,0.22);
+  top: 10px;
+  left: 5px;
+}
+.otp-blob-2 {
+  width: 70px;
+  height: 70px;
+  background: rgba(99,102,241,0.18);
+  bottom: 10px;
+  right: 5px;
+}
+
+.otp-phone-svg {
+  width: 100px;
+  height: 170px;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 8px 24px rgba(30,42,59,0.45));
+}
+
+/* Floating OTP card */
+.otp-card-float {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -48%);
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  text-align: center;
+  z-index: 2;
+  min-width: 110px;
+}
+
+.otp-card-label {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.otp-card-code {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 3px;
+  margin: 0;
+  font-family: 'Courier New', monospace;
+}
+
+/* ══════════════════════════════════════
+   SUBTITLE
+══════════════════════════════════════ */
+.otp-subtitle {
+  font-size: 14px;
+  color: #475569;
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+.otp-phone {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/* ══════════════════════════════════════
+   6-DIGIT INPUT BOXES
+══════════════════════════════════════ */
+.otp-inputs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.otp-box {
+  width: 48px;
+  height: 56px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  text-align: center;
+  outline: none;
+  caret-color: #3b82f6;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  font-family: 'Courier New', monospace;
+}
+
+.otp-box:focus {
+  border-color: #3b82f6;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.14);
+}
+
+.otp-box-error {
+  border-color: #ef4444 !important;
+  background: #fef2f2 !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
+}
+
+.otp-box-success {
+  border-color: #22c55e !important;
+  background: #f0fdf4 !important;
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.12) !important;
+}
+
+/* ══════════════════════════════════════
+   MESSAGES
+══════════════════════════════════════ */
+.otp-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.otp-msg-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.otp-msg-success {
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+/* ══════════════════════════════════════
+   RESEND ROW
+══════════════════════════════════════ */
+.otp-resend-row {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.otp-resend-timer {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.otp-countdown {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.otp-resend-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2563eb;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.otp-resend-btn:hover {
+  background: #eff6ff;
+}
+
+/* ══════════════════════════════════════
+   VERIFY BUTTON
+══════════════════════════════════════ */
+.otp-verify-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: 0.2px;
+  box-shadow: 0 4px 18px rgba(37,99,235,0.35);
+  transition: filter 0.15s ease, transform 0.15s ease, background 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.otp-verify-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.otp-verify-btn-disabled {
+  background: #e2e8f0;
+  color: #94a3b8;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.otp-verify-btn-loading {
+  cursor: wait;
+  opacity: 0.85;
+}
+
+.otp-verify-btn-success {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+  box-shadow: 0 4px 18px rgba(22,163,74,0.3);
+}
+
+/* Spinner */
+.otp-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: otp-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes otp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ══════════════════════════════════════
+   VALIDITY NOTE
+══════════════════════════════════════ */
+.otp-validity {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  margin: 0;
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+.otp-outer-wide {
+  max-width: 480px;
+}
+
+.post-sub {
+  margin-bottom: 20px;
+}
+
+.otp-post-delivery,
+.otp-post-pickup {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.otp-qr-wrap {
+  text-align: center;
+}
+
+.otp-qr-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 12px);
+  gap: 2px;
+  padding: 14px;
+  background: #fff;
+  border: 2px solid #0f172a;
+  border-radius: 12px;
+  margin: 0 auto 10px;
+}
+
+.otp-qr-cell {
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 1px;
+}
+
+.otp-qr-cell.on {
+  background: #0f172a;
+}
+
+.otp-qr-label {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
+
+.otp-post-hint {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  text-align: center;
+}
+
+.otp-post-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.otp-post-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.otp-post-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.otp-post-scan {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+}
+
+.otp-post-cash {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 2px solid #86efac;
+}
+
+.otp-file-hidden {
+  display: none;
+}
+
+.otp-upload-zone {
+  width: 100%;
+  padding: 32px 20px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 14px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.otp-upload-zone small {
+  font-weight: 400;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.otp-preview-wrap {
+  width: 100%;
+  text-align: center;
+}
+
+.otp-preview-img {
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.otp-preview-name {
+  font-size: 12px;
+  color: #64748b;
+  margin: 8px 0 0;
+}
+
+.otp-change-photo {
+  background: none;
+  border: none;
+  color: #6366f1;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.otp-done-card {
+  text-align: center;
+  padding: 24px;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  width: 100%;
+}
+
+.otp-done-icon {
+  color: #16a34a;
+  margin-bottom: 12px;
+}
+
+.otp-done-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  color: #0f172a;
+}
+
+.otp-done-card p {
+  margin: 0 0 20px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+@media (max-width: 480px) {
+  .otp-box {
+    width: 42px;
+    height: 50px;
+    font-size: 20px;
+    border-radius: 10px;
+  }
+
+  .otp-inputs {
+    gap: 7px;
+  }
+
+  .otp-page-title {
+    font-size: 19px;
+  }
+}

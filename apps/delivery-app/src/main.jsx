@@ -5,8 +5,7 @@ import App from "./App.jsx";
 import "./styles/globals.css";
 import "./styles/tailwind.css";
 
-const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
-const basename = basePath && basePath !== "/" ? basePath : undefined;
+const basename = (import.meta.env.BASE_URL || "/").replace(/\/$/, "") || "/";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

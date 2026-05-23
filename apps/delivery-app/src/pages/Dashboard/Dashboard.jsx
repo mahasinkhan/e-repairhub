@@ -1,342 +1,379 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
-  MdArrowForward,
-  MdCheckCircle,
-  MdElectricMoped,
-  MdHourglassEmpty,
-  MdInventory2,
-  MdLocalShipping,
-  MdMap,
-  MdNotifications,
-  MdPlace,
-  MdQrCodeScanner,
-  MdStar,
-  MdTrendingDown,
-  MdTrendingUp,
-  MdVpnKey,
-} from 'react-icons/md'
+  ClipboardList,
+  PackageSearch,
+  Truck,
+  CheckCircle2,
+  TrendingUp,
+  TrendingDown,
+  MapPin,
+  ChevronRight,
+  IndianRupee,
+  ChevronDown,
+} from 'lucide-react'
 import './Dashboard.css'
 
-const AGENT = {
-  name: 'Arjun Sharma',
-  id: 'AGT-00412',
-  avatar: 'AS',
-  zone: 'Delhi NCR – Zone 4',
+/* ─────────────────────────────────────────
+   DUMMY DATA  (swap with API calls later)
+───────────────────────────────────────── */
+function getAgentGreeting() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || 'null')
+    const full = user?.name || 'Ramesh Kumar'
+    const first = full.split(/\s+/)[0] || 'Ramesh'
+    return { first, full }
+  } catch {
+    return { first: 'Ramesh', full: 'Ramesh Kumar' }
+  }
 }
+
+const TODAY = new Date().toLocaleDateString('en-IN', {
+  day: '2-digit',
+  month: 'long',
+  year: 'numeric',
+})
 
 const STATS = [
   {
-    label: 'Total Tasks',
-    value: 48,
-    Icon: MdInventory2,
-    sub: 'Assigned today',
-    pct: '+12%',
+    key: 'tasks',
+    label: "Today's Tasks",
+    value: 5,
+    sub: '+2 from yesterday',
     up: true,
-    gradient: 'grad-blue',
+    icon: ClipboardList,
+    color: 'stat-blue',
   },
   {
+    key: 'pickups',
     label: 'Pending Pickups',
     value: 7,
-    Icon: MdElectricMoped,
-    sub: 'Awaiting action',
-    pct: '-3%',
+    sub: '3 urgent',
     up: false,
-    gradient: 'grad-orange',
+    icon: PackageSearch,
+    color: 'stat-orange',
   },
   {
+    key: 'deliveries',
     label: 'Pending Deliveries',
-    value: 11,
-    Icon: MdLocalShipping,
+    value: 3,
     sub: 'Out for delivery',
-    pct: '+5%',
     up: true,
-    gradient: 'grad-purple',
+    icon: Truck,
+    color: 'stat-purple',
   },
   {
-    label: 'Completed',
-    value: 30,
-    Icon: MdCheckCircle,
+    key: 'completed',
+    label: 'Completed Tasks',
+    value: 12,
     sub: 'Delivered today',
-    pct: '+18%',
     up: true,
-    gradient: 'grad-green',
+    icon: CheckCircle2,
+    color: 'stat-green',
   },
 ]
 
-const WEEKLY = [
-  { day: 'Mon', val: 72 },
-  { day: 'Tue', val: 58 },
-  { day: 'Wed', val: 85 },
-  { day: 'Thu', val: 63 },
-  { day: 'Fri', val: 91 },
-  { day: 'Sat', val: 47 },
-  { day: 'Sun', val: 30 },
-]
-
-const TASKS = [
-  { id: 'ORD-9841', customer: 'Priya Mehta', device: 'iPhone 14 Pro', pickup: 'Sector 18, Noida', delivery: 'Lajpat Nagar, Delhi', type: 'Pickup', status: 'Pending', time: '09:30 AM' },
-  { id: 'ORD-9842', customer: 'Rahul Gupta', device: 'Samsung S23', pickup: 'Connaught Place', delivery: 'Dwarka Sec 10', type: 'Delivery', status: 'In Transit', time: '10:00 AM' },
-  { id: 'ORD-9843', customer: 'Sneha Kapoor', device: 'MacBook Air M2', pickup: 'Karol Bagh', delivery: 'Rohini Sec 14', type: 'Pickup', status: 'Picked', time: '10:45 AM' },
-  { id: 'ORD-9844', customer: 'Amit Singh', device: 'OnePlus 11', pickup: 'Janakpuri', delivery: 'Saket', type: 'Delivery', status: 'Delivered', time: '11:15 AM' },
-  { id: 'ORD-9845', customer: 'Kavya Reddy', device: 'iPad Pro 12.9', pickup: 'Greater Kailash', delivery: 'Vasant Kunj', type: 'Delivery', status: 'Cancelled', time: '12:00 PM' },
-  { id: 'ORD-9846', customer: 'Neeraj Tiwari', device: 'Realme GT Neo', pickup: 'Pitampura', delivery: 'Shalimar Bagh', type: 'Pickup', status: 'Pending', time: '01:30 PM' },
-]
-
-const QUICK_ACTIONS = [
-  { label: 'Start Pickup', Icon: MdPlace, color: 'qa-blue' },
-  { label: 'Start Delivery', Icon: MdLocalShipping, color: 'qa-green' },
-  { label: 'Verify OTP', Icon: MdVpnKey, color: 'qa-purple' },
-  { label: 'Open Maps', Icon: MdMap, color: 'qa-orange' },
-  { label: 'Notifications', Icon: MdNotifications, color: 'qa-red' },
-  { label: 'Scan QR', Icon: MdQrCodeScanner, color: 'qa-teal' },
-]
-
-const LIVE_ITEMS = [
-  { label: 'Riders Active', val: 1, Icon: MdElectricMoped, pct: 100, color: '#22c55e' },
-  { label: 'Picked Today', val: 18, Icon: MdInventory2, pct: 75, color: '#6c63ff' },
-  { label: 'Delivered Today', val: 30, Icon: MdCheckCircle, pct: 62, color: '#3b82f6' },
-  { label: 'Running Tasks', val: 11, Icon: MdHourglassEmpty, pct: 46, color: '#f97316' },
-]
-
-function StatusBadge({ status }) {
-  const map = {
-    Pending: 'badge-pending',
-    Picked: 'badge-picked',
-    'In Transit': 'badge-transit',
-    Delivered: 'badge-delivered',
-    Cancelled: 'badge-cancelled',
-  }
-  return <span className={`badge ${map[status] || ''}`}>{status}</span>
+const PROGRESS = {
+  completed: 10,
+  inTransit: 5,
+  pending: 2,
 }
+const TOTAL_PROGRESS = PROGRESS.completed + PROGRESS.inTransit + PROGRESS.pending
+const PROGRESS_PCT = Math.round((PROGRESS.completed / TOTAL_PROGRESS) * 100)
 
-function AnimatedCount({ target }) {
-  const [count, setCount] = useState(0)
+// Earnings sparkline data (last 7 days)
+const EARNINGS_DATA = [820, 1100, 950, 1400, 1200, 1650, 1850]
+const EARNINGS_TODAY = 1850
+const EARNINGS_YESTERDAY = 1650
+
+// Upcoming tasks table
+const UPCOMING_TASKS = [
+  { id: 'ORD-4821', name: 'Neeraj Tiwari',   type: 'Pickup',   time: '9:30 AM',  pickup: 'Sector 18, Noida',      status: 'Pending'    },
+  { id: 'ORD-4822', name: 'Priya Mehta',     type: 'Delivery', time: '10:00 AM', pickup: 'Connaught Place',        status: 'In Transit' },
+  { id: 'ORD-4823', name: 'Amit Singh',      type: 'Pickup',   time: '10:45 AM', pickup: 'Karol Bagh',             status: 'Picked'     },
+  { id: 'ORD-4824', name: 'Sneha Kapoor',    type: 'Delivery', time: '11:30 AM', pickup: 'Janakpuri',              status: 'Delivered'  },
+  { id: 'ORD-4825', name: 'Rahul Gupta',     type: 'Pickup',   time: '12:15 PM', pickup: 'Greater Kailash',        status: 'Pending'    },
+]
+
+// Live location marker (dummy coords — Delhi)
+const LIVE_LOCATION = { lat: 28.6139, lng: 77.2090, label: 'Connaught Place, Delhi' }
+
+/* ─────────────────────────────────────────
+   ANIMATED COUNTER
+───────────────────────────────────────── */
+function Counter({ value }) {
+  const [display, setDisplay] = useState(0)
   useEffect(() => {
-    let start = 0
-    const step = Math.ceil(target / 30)
-    const timer = setInterval(() => {
-      start += step
-      if (start >= target) {
-        setCount(target)
-        clearInterval(timer)
-      } else setCount(start)
+    let cur = 0
+    const step = Math.max(1, Math.ceil(value / 25))
+    const t = setInterval(() => {
+      cur += step
+      if (cur >= value) { setDisplay(value); clearInterval(t) }
+      else setDisplay(cur)
     }, 40)
-    return () => clearInterval(timer)
-  }, [target])
-  return <span>{count}</span>
+    return () => clearInterval(t)
+  }, [value])
+  return <>{display}</>
 }
 
-function CircularProgress({ pct, color, label }) {
-  const r = 36
+/* ─────────────────────────────────────────
+   DONUT CHART (SVG)
+───────────────────────────────────────── */
+function DonutChart({ pct }) {
+  const r = 52
   const circ = 2 * Math.PI * r
-  const offset = circ - (pct / 100) * circ
+  const dash = (pct / 100) * circ
+
   return (
-    <div className="circ-wrap">
-      <svg width="88" height="88" viewBox="0 0 88 88">
-        <circle cx="44" cy="44" r={r} className="circ-track" />
-        <circle
-          cx="44"
-          cy="44"
-          r={r}
-          className="circ-fill"
-          style={{ stroke: color, strokeDasharray: circ, strokeDashoffset: offset }}
-        />
-      </svg>
-      <div className="circ-label">
-        <span className="circ-pct" style={{ color }}>
-          {pct}%
-        </span>
-        <span className="circ-sub">{label}</span>
+    <svg width="140" height="140" viewBox="0 0 140 140" className="donut-svg">
+      {/* track */}
+      <circle cx="70" cy="70" r={r} fill="none" stroke="#f1f5f9" strokeWidth="14" />
+      {/* inTransit arc */}
+      <circle
+        cx="70" cy="70" r={r} fill="none"
+        stroke="#f97316" strokeWidth="14"
+        strokeDasharray={`${((PROGRESS.inTransit / TOTAL_PROGRESS) * circ).toFixed(2)} ${circ}`}
+        strokeDashoffset={-(((PROGRESS.completed / TOTAL_PROGRESS) * circ)).toFixed(2)}
+        strokeLinecap="round"
+        style={{ transform: 'rotate(-90deg)', transformOrigin: '70px 70px', transition: 'stroke-dasharray 1s ease' }}
+      />
+      {/* completed arc */}
+      <circle
+        cx="70" cy="70" r={r} fill="none"
+        stroke="#3b82f6" strokeWidth="14"
+        strokeDasharray={`${((PROGRESS.completed / TOTAL_PROGRESS) * circ).toFixed(2)} ${circ}`}
+        strokeDashoffset="0"
+        strokeLinecap="round"
+        style={{ transform: 'rotate(-90deg)', transformOrigin: '70px 70px', transition: 'stroke-dasharray 1s ease' }}
+      />
+      {/* center text */}
+      <text x="70" y="64" textAnchor="middle" className="donut-pct-text">{pct}%</text>
+      <text x="70" y="80" textAnchor="middle" className="donut-sub-text">Completed</text>
+    </svg>
+  )
+}
+
+/* ─────────────────────────────────────────
+   SPARKLINE CHART (SVG)
+───────────────────────────────────────── */
+function Sparkline({ data }) {
+  const W = 200, H = 60
+  const max = Math.max(...data)
+  const min = Math.min(...data)
+  const range = max - min || 1
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * W
+    const y = H - ((v - min) / range) * (H - 8) - 4
+    return `${x},${y}`
+  })
+  const pathD = `M${pts.join(' L')}`
+  const areaD = `M${pts[0]} L${pts.join(' L')} L${W},${H} L0,${H} Z`
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="sparkline-svg" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaD} fill="url(#spark-grad)" />
+      <path d={pathD} fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/* ─────────────────────────────────────────
+   MAP PLACEHOLDER (shows OSM iframe)
+───────────────────────────────────────── */
+function LiveMap() {
+  return (
+    <div className="map-wrap">
+      <iframe
+        title="Live Location"
+        src="https://www.openstreetmap.org/export/embed.html?bbox=77.18,28.59,77.24,28.64&layer=mapnik&marker=28.6139,77.2090"
+        className="map-iframe"
+        loading="lazy"
+      />
+      <div className="map-pin-label">
+        <MapPin size={14} />
+        <span>{LIVE_LOCATION.label}</span>
       </div>
     </div>
   )
 }
 
+/* ─────────────────────────────────────────
+   STATUS BADGE
+───────────────────────────────────────── */
+function StatusBadge({ status }) {
+  const cls = {
+    'Pending':    'badge-pending',
+    'In Transit': 'badge-transit',
+    'Picked':     'badge-picked',
+    'Delivered':  'badge-delivered',
+    'Cancelled':  'badge-cancelled',
+  }
+  return <span className={`db-badge ${cls[status] || ''}`}>{status}</span>
+}
+
+/* ─────────────────────────────────────────
+   DASHBOARD PAGE
+───────────────────────────────────────── */
 export default function Dashboard() {
+  const earningsDiff = EARNINGS_TODAY - EARNINGS_YESTERDAY
+  const earningsUp = earningsDiff >= 0
+  const agent = getAgentGreeting()
+
   return (
-    <div className="dash-root">
-      <div className="dash-main">
-        <div className="dash-content">
-          <div className="zone-bar">
-            <span className="zone-label">
-              <MdPlace className="zone-icon" aria-hidden />
-              Zone: <strong>{AGENT.zone}</strong>
-            </span>
-            <span className="zone-id">
-              Agent ID: <strong>{AGENT.id}</strong>
+    <div className="db-root">
+
+      {/* ── GREETING (below top header) ── */}
+      <div className="db-header">
+        <div className="db-greeting-block">
+          <h2 className="db-greeting">
+            Good Morning, {agent.first} <span className="db-wave" aria-hidden>👋</span>
+          </h2>
+          <p className="db-subgreeting">Ready to deliver excellence today!</p>
+        </div>
+        <button type="button" className="db-datePicker" aria-label="Selected date">
+          <span>{TODAY}</span>
+          <ChevronDown size={16} className="db-dateChevron" aria-hidden />
+        </button>
+      </div>
+
+      {/* ── STAT CARDS ── */}
+      <div className="db-stats-row">
+        {STATS.map((s) => {
+          const Icon = s.icon
+          return (
+            <div key={s.key} className={`db-stat-card ${s.color}`}>
+              <div className="db-stat-top">
+                <div className="db-stat-icon-wrap">
+                  <Icon size={22} className="db-stat-icon" />
+                </div>
+                <div className={`db-stat-trend ${s.up ? 'trend-up' : 'trend-down'}`}>
+                  {s.up ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                </div>
+              </div>
+              <p className="db-stat-value"><Counter value={s.value} /></p>
+              <p className="db-stat-label">{s.label}</p>
+              <p className="db-stat-sub">{s.sub}</p>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── MIDDLE ROW: Progress + Earnings + Map ── */}
+      <div className="db-mid-row">
+
+        {/* Today's Progress */}
+        <div className="db-card db-progress-card">
+          <div className="db-card-header">
+            <h3 className="db-card-title">Today's Progress</h3>
+          </div>
+          <div className="db-progress-body">
+            <DonutChart pct={PROGRESS_PCT} />
+            <div className="db-progress-legend">
+              <div className="db-legend-item">
+                <span className="db-legend-dot dot-blue" />
+                <span className="db-legend-label">Completed</span>
+                <span className="db-legend-val">{PROGRESS.completed}</span>
+              </div>
+              <div className="db-legend-item">
+                <span className="db-legend-dot dot-orange" />
+                <span className="db-legend-label">In Transit</span>
+                <span className="db-legend-val">{PROGRESS.inTransit}</span>
+              </div>
+              <div className="db-legend-item">
+                <span className="db-legend-dot dot-gray" />
+                <span className="db-legend-label">Pending</span>
+                <span className="db-legend-val">{PROGRESS.pending}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Earnings Today */}
+        <div className="db-card db-earnings-card">
+          <div className="db-card-header">
+            <h3 className="db-card-title">Earnings Today</h3>
+          </div>
+          <div className="db-earnings-amount">
+            <IndianRupee size={20} className="db-rupee-icon" />
+            <span className="db-earnings-value">{EARNINGS_TODAY.toLocaleString('en-IN')}</span>
+          </div>
+          <div className={`db-earnings-diff ${earningsUp ? 'diff-up' : 'diff-down'}`}>
+            {earningsUp ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+            <span>₹{Math.abs(earningsDiff).toLocaleString('en-IN')} vs yesterday</span>
+          </div>
+          <div className="db-sparkline-wrap">
+            <Sparkline data={EARNINGS_DATA} />
+          </div>
+          <div className="db-sparkline-labels">
+            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+              <span key={i} className="db-spark-day">{d}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Live Location */}
+        <div className="db-card db-map-card">
+          <div className="db-card-header">
+            <h3 className="db-card-title">Live Location</h3>
+            <span className="db-live-badge">
+              <span className="db-live-dot" />
+              LIVE
             </span>
           </div>
+          <LiveMap />
+        </div>
 
-          <section className="stats-grid">
-            {STATS.map((s) => (
-              <div key={s.label} className={`stat-card ${s.gradient}`}>
-                <div className="stat-top">
-                  <div className="stat-info">
-                    <p className="stat-label">{s.label}</p>
-                    <h2 className="stat-value">
-                      <AnimatedCount target={s.value} />
-                    </h2>
-                    <p className="stat-sub">{s.sub}</p>
-                  </div>
-                  <div className="stat-icon-wrap" aria-hidden>
-                    <s.Icon className="stat-svg" />
-                  </div>
-                </div>
-                <div className={`stat-pct ${s.up ? 'pct-up' : 'pct-down'}`}>
-                  {s.up ? <MdTrendingUp className="trend-ico" /> : <MdTrendingDown className="trend-ico" />} {s.pct}{' '}
-                  vs yesterday
-                </div>
-              </div>
-            ))}
-          </section>
+      </div>
 
-          <section className="analytics-section">
-            <div className="analytics-card chart-card">
-              <h3 className="section-title">Weekly Deliveries</h3>
-              <div className="bar-chart">
-                {WEEKLY.map((w, i) => (
-                  <div key={w.day} className="bar-col">
-                    <div className="bar-outer">
-                      <div
-                        className="bar-inner"
-                        style={{ height: `${w.val}%`, animationDelay: `${i * 80}ms` }}
-                      >
-                        <span className="bar-val">{w.val}</span>
-                      </div>
-                    </div>
-                    <span className="bar-day">{w.day}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="analytics-card perf-card">
-              <h3 className="section-title">Performance</h3>
-              <div className="circ-row">
-                <CircularProgress pct={88} color="#6c63ff" label="Success Rate" />
-                <CircularProgress pct={63} color="#f97316" label="On-Time" />
-                <CircularProgress pct={95} color="#22c55e" label="OTP Rate" />
-              </div>
-              <div className="perf-stats">
-                {[
-                  { label: 'Avg Delivery Time', val: '34 min' },
-                  {
-                    label: 'Customer Rating',
-                    val: (
-                      <>
-                        4.8 <MdStar className="inline-star" aria-hidden />
-                      </>
-                    ),
-                  },
-                  { label: 'Tasks This Month', val: '312' },
-                  { label: 'Distance Covered', val: '1,240 km' },
-                ].map((p) => (
-                  <div key={p.label} className="perf-item">
-                    <span className="perf-label">{p.label}</span>
-                    <span className="perf-val">{p.val}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="live-section">
-            <h3 className="section-title">Live Delivery Status</h3>
-            <div className="live-grid">
-              {LIVE_ITEMS.map((l) => (
-                <div key={l.label} className="live-card">
-                  <div className="live-top">
-                    <span className="live-icon" aria-hidden>
-                      <l.Icon />
+      {/* ── UPCOMING TASKS ── */}
+      <div className="db-card db-tasks-card">
+        <div className="db-card-header">
+          <h3 className="db-card-title">Upcoming Tasks</h3>
+          <button type="button" className="db-view-all">
+            View All <ChevronRight size={15} />
+          </button>
+        </div>
+        <div className="db-table-wrap">
+          <table className="db-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Time</th>
+                <th>Pickup Location</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {UPCOMING_TASKS.map((t) => (
+                <tr key={t.id} className="db-task-row">
+                  <td><span className="db-order-id">{t.id}</span></td>
+                  <td className="db-name">{t.name}</td>
+                  <td>
+                    <span className={`db-type-badge ${t.type === 'Pickup' ? 'type-pickup' : 'type-delivery'}`}>
+                      {t.type === 'Pickup' ? <PackageSearch size={11} /> : <Truck size={11} />}
+                      {t.type}
                     </span>
-                    <span className="live-val">{l.val}</span>
-                  </div>
-                  <p className="live-label">{l.label}</p>
-                  <div className="live-bar-bg">
-                    <div className="live-bar-fill" style={{ width: `${l.pct}%`, background: l.color }} />
-                  </div>
-                  {l.label === 'Riders Active' && <span className="pulse-active">● LIVE</span>}
-                </div>
+                  </td>
+                  <td className="db-time">{t.time}</td>
+                  <td className="db-pickup-addr">
+                    <MapPin size={12} className="db-addr-pin" />
+                    {t.pickup}
+                  </td>
+                  <td><StatusBadge status={t.status} /></td>
+                </tr>
               ))}
-            </div>
-          </section>
-
-          <section className="qa-section">
-            <h3 className="section-title">Quick Actions</h3>
-            <div className="qa-grid">
-              {QUICK_ACTIONS.map((a) => (
-                <button key={a.label} type="button" className={`qa-btn ${a.color}`}>
-                  <span className="qa-icon" aria-hidden>
-                    <a.Icon />
-                  </span>
-                  <span className="qa-label">{a.label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="tasks-section">
-            <div className="tasks-header">
-              <h3 className="section-title">Recent Tasks</h3>
-              <button type="button" className="view-all-btn">
-                View All <MdArrowForward className="btn-ico-inline" aria-hidden />
-              </button>
-            </div>
-            <div className="table-wrap">
-              <table className="tasks-table">
-                <thead>
-                  <tr>
-                    {['Order ID', 'Customer', 'Device', 'Pickup', 'Delivery', 'Type', 'Status', 'Time', 'Actions'].map(
-                      (h) => (
-                        <th key={h}>{h}</th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {TASKS.map((t) => (
-                    <tr key={t.id} className="task-row">
-                      <td>
-                        <span className="order-id">{t.id}</span>
-                      </td>
-                      <td>{t.customer}</td>
-                      <td>
-                        <span className="device-chip">{t.device}</span>
-                      </td>
-                      <td className="addr">{t.pickup}</td>
-                      <td className="addr">{t.delivery}</td>
-                      <td>
-                        <span className={`type-badge ${t.type === 'Pickup' ? 'type-pickup' : 'type-delivery'}`}>
-                          {t.type}
-                        </span>
-                      </td>
-                      <td>
-                        <StatusBadge status={t.status} />
-                      </td>
-                      <td className="time-cell">{t.time}</td>
-                      <td>
-                        <div className="action-btns">
-                          <button type="button" className="act-btn act-view">
-                            View
-                          </button>
-                          <button type="button" className="act-btn act-start">
-                            Start
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <footer className="dash-footer">
-            <span>© 2024 SwiftDrop Logistics · Agent Portal v2.1</span>
-            <span>Powered by SwiftDrop Engine</span>
-          </footer>
+            </tbody>
+          </table>
         </div>
       </div>
+
     </div>
   )
 }

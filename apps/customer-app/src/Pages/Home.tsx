@@ -1,5 +1,6 @@
 import React from 'react'
 import Hero from '../Components/HomePage/Hero'
+import TrustedBy from '../Components/HomePage/TrustedBy'
 import HowItWorks from '../Components/HomePage/HowItWorks'
 import BrandHome from '../Components/HomePage/BrandHome'
 import Services from '../Components/HomePage/Services'
@@ -15,6 +16,7 @@ const Home = () => {
   return (
     <div className="home-landing">
       <Hero />
+      <TrustedBy />
       <main className="home-landing__main">
         <HowItWorks />
         <BrandHome />

@@ -4,9 +4,9 @@
 
 /* Desktop: sidebar fixed + main column (header + scroll) */
 .content {
-  margin-left: 280px;
+  margin-left: 220px;
   padding: 0;
-  width: calc(100% - 280px);
+  width: calc(100% - 220px);
   min-width: 0;
   box-sizing: border-box;
   display: flex;
@@ -20,7 +20,8 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 24px;
+  padding: 20px 24px 24px;
+  background: #f8fafc;
 }
 
 .contentInner {
@@ -31,19 +32,6 @@
 
 .mobileTopBar {
   display: none;
-}
-
-/* Ensure branding text is white on the dark sidebar/header background */
-.sidebarBrand, 
-.mobileBrand,
-.sidebar-logo,
-.brand-text {
-  color: #ffffff !important;
-  text-decoration: none;
-}
-
-.sidebarBrand *, .mobileBrand * {
-  color: #ffffff !important;
 }
 
 @media (max-width: 900px) {
@@ -63,6 +51,7 @@
     padding: 12px 16px 18px;
   }
 
+  /* One row: [Menu][Page title] — left | [Notif][Profile] — right */
   .mobileTopBar {
     position: fixed;
     top: 0;
@@ -73,33 +62,68 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    background: var(--shell-gradient);
-    color: #ffffff;
-  }
-
-  .mobileBrand {
-    display: flex;
     gap: 10px;
-    align-items: center;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-    color: #ffffff !important;
+    padding: 0 12px;
+    border-bottom: 1px solid #e8ecf1;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
   }
 
-  .mobileBrandDot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--brand);
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+  .content > .appHeader {
+    display: none;
+  }
+
+  .mobileTopBarLeft {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .mobileTopBarTitle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .mobileTopBarActions {
+    flex-shrink: 0;
+    gap: 10px;
+  }
+
+  .mobileTopBarPageIcon {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #6366f1 0%, #5b5fef 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  }
+
+  .mobileTopBarPageName {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .toggleBtn {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.08);
-    color: #ffffff;
+    flex-shrink: 0;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #334155;
     min-height: 38px;
     padding: 0 12px;
     border-radius: 12px;
@@ -111,8 +135,8 @@
   }
 
   .toggleBtn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: #f1f5f9;
+    border-color: #cbd5e1;
     transform: translateY(-1px);
   }
 
@@ -129,23 +153,8 @@
     padding: 0 12px;
   }
 
-  .toggleBtn {
-    min-width: 52px;
-    padding: 0 10px;
-  }
-
-  .mobileBrand {
-    font-size: 14px;
-    gap: 8px;
-  }
-
   .contentScroll {
     padding: 10px 12px 16px;
-  }
-
-  .sidebar {
-    width: 100%;
-    max-width: 320px;
   }
 }
 
@@ -155,12 +164,12 @@
     padding: 0 10px;
   }
 
-  .toggleBtn span {
+  .toggleBtn .toggleBtnLabel {
     display: none;
   }
 
-  .mobileBrand {
-    gap: 8px;
+  .mobileTopBarPageName {
+    font-size: 1rem;
   }
 
   .contentScroll {

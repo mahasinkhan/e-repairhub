@@ -13,9 +13,8 @@
     "dev:admin": "npm run dev -w admin-app",
     "dev:franchise": "npm run dev -w franchise-app",
     "build:franchise": "npm run build -w franchise-app",
-    "dev:delivery": "npm run dev -w delivery-app",
-    "build:delivery": "npm run build -w delivery-app",
     "dev:customer": "npm run dev -w customer-app",
+    "dev:delivery": "npm run dev -w delivery-app",
     "seed:users": "npm run seed:users -w @e-repairhub/backend"
   }
 }

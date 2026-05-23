@@ -1,229 +1,263 @@
-.sidebar {
+/* ═══════════════════════════════════════════════
+   Delivery App Sidebar  —  dark navy theme
+   Exact match to E-RepairHub Delivery Panel image
+═══════════════════════════════════════════════ */
+
+/* ── Shell ── */
+.dlv-sidebar {
   position: fixed;
   left: 0;
   top: 0;
   height: 100vh;
-  width: 280px;
+  width: 220px;
   z-index: 40;
-
-  background: var(--shell-gradient);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(18px);
-  box-shadow: var(--shadow);
-
   display: flex;
   flex-direction: column;
+  background: #1e2a3b;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 2px 0 12px rgba(0,0,0,0.25);
   overflow: hidden;
+  font-family: inherit;
 }
 
-.sidebarHeader {
-  padding: 18px 18px 10px;
+/* ── Brand header ── */
+.dlv-sidebarHeader {
+  height: 62px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.brandDot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand), var(--brand-2));
-  box-shadow: 0 0 0 8px rgba(110, 231, 255, 0.12);
-  flex: 0 0 auto;
-}
-
-.brandText {
-  min-width: 0;
-}
-
-.brandTitle {
-  font-weight: 800;
-  letter-spacing: 0.2px;
-  line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.brandSub {
-  margin-top: 2px;
-  font-size: 12px;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.closeBtn {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text);
-  height: 36px;
-  width: 36px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
-}
-
-.closeBtn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.menuIconSvg {
-  width: 18px;
-  height: 18px;
+  gap: 10px;
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
   flex-shrink: 0;
 }
 
-.closeBtn:hover {
-  background: rgba(255, 255, 255, 0.10);
-  border-color: rgba(110, 231, 255, 0.35);
-  transform: translateY(-1px);
-}
-
-.menu {
-  padding: 10px 10px 14px;
+.dlv-brand {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.menuItem {
-  position: relative;
-  display: grid;
-  grid-template-columns: 22px 1fr;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
 
-  padding: 11px 12px;
-  border-radius: 14px;
+.dlv-brandLogo {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  box-shadow: 0 2px 8px rgba(99,102,241,0.45);
+}
+
+.dlv-brandText {
+  min-width: 0;
+}
+
+.dlv-brandTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+  letter-spacing: 0.1px;
+}
+
+.dlv-brandSub {
+  font-size: 10.5px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 2px 0 0;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Close btn — mobile only */
+.dlv-closeBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: #94a3b8;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.dlv-closeBtn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #f1f5f9;
+}
+
+.dlv-closeBtnIcon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ── Navigation ── */
+.dlv-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+
+.dlv-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dlv-nav::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+
+.dlv-navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.84);
+  font-size: 13px;
+  font-weight: 500;
+  color: #94a3b8;
+  transition: background 140ms ease, color 140ms ease;
+  white-space: nowrap;
   border: 1px solid transparent;
-  background: transparent;
-
-  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
 }
 
-.menuItem:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.10);
-  transform: translateY(-1px);
+.dlv-navItem:hover {
+  background: rgba(255,255,255,0.06);
+  color: #e2e8f0;
 }
 
-.menuIcon {
+/* Active — blue pill highlight */
+.dlv-navItemActive {
+  background: rgba(59,130,246,0.18);
+  color: #93c5fd;
+  border-color: rgba(59,130,246,0.3);
+  font-weight: 600;
+}
+
+.dlv-navItemActive .dlv-navIconWrap {
+  color: #60a5fa;
+}
+
+/* Icon wrapper */
+.dlv-navIconWrap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.74);
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: inherit;
 }
 
-.menuLabel {
-  font-weight: 600;
-  letter-spacing: 0.15px;
+.dlv-navIcon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
 }
 
-.menuGlow {
-  position: absolute;
-  inset: 0;
-  border-radius: 14px;
-  background: radial-gradient(
-    260px 80px at 20% 50%,
-    rgba(110, 231, 255, 0.14),
-    transparent 55%
-  );
-  opacity: 0;
-  transition: opacity 200ms ease;
-  pointer-events: none;
+.dlv-navLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
 }
 
-.menuItem:hover .menuGlow {
-  opacity: 1;
+/* ── Footer / Logout ── */
+.dlv-sidebarFooter {
+  flex-shrink: 0;
+  padding: 8px;
+  border-top: 1px solid rgba(255,255,255,0.07);
 }
 
-.menuItemActive {
-  background: rgba(124, 92, 255, 0.16);
-  border-color: rgba(124, 92, 255, 0.35);
-  color: rgba(255, 255, 255, 0.95);
-}
-
-.menuItemActive .menuIcon {
-  color: rgba(110, 231, 255, 0.9);
-}
-
-.sidebarFooter {
-  margin-top: auto;
-  padding: 14px 14px 16px;
-}
-
-.footerCard {
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: var(--radius);
-  padding: 14px;
-}
-
-.footerTitle {
-  font-weight: 800;
-  letter-spacing: 0.2px;
-}
-
-.footerText {
-  margin-top: 6px;
-  color: var(--muted);
+.dlv-logoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
   font-size: 13px;
-  line-height: 1.35;
+  font-weight: 500;
+  color: #f87171;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+  text-align: left;
 }
 
-/* Mobile behavior */
-.backdrop {
+.dlv-logoutBtn:hover {
+  background: rgba(239,68,68,0.1);
+  border-color: rgba(239,68,68,0.2);
+}
+
+/* ── Mobile backdrop ── */
+.dlv-backdrop {
   display: none;
 }
 
+/* ══════════════════════════════════════
+   Mobile ≤ 900px — slide-in drawer (Menu click)
+══════════════════════════════════════ */
 @media (max-width: 900px) {
-  .sidebar {
-    transform: translateX(-105%);
-    transition: transform 220ms ease;
+  .dlv-sidebar {
+    width: 240px;
+    transform: translateX(-110%);
+    transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 45;
   }
 
-  .sidebarOpen {
+  .dlv-sidebarOpen {
     transform: translateX(0);
   }
 
-  .closeBtn {
+  .dlv-closeBtn {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
   }
 
-  .backdrop {
+  .dlv-backdrop {
     display: block;
     position: fixed;
     inset: 0;
     z-index: 35;
+    border: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.55);
     opacity: 0;
     pointer-events: none;
-    border: 0;
-    background: rgba(0, 0, 0, 0.55);
+    cursor: default;
     transition: opacity 220ms ease;
   }
 
-  .backdropShow {
+  .dlv-backdropShow {
     opacity: 1;
     pointer-events: auto;
   }
 }
 
+@media (max-width: 480px) {
+  .dlv-sidebar {
+    width: 100%;
+    max-width: 280px;
+  }
+}

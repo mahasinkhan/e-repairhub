@@ -8,6 +8,7 @@ import { userMgmtErrorHandler } from "./modules/users/user.controller.js";
 import { mediaErrorHandler } from "./modules/media/media.controller.js";
 import { mediaRouter } from "./modules/media/media.routes.js";
 import { userRouter } from "./modules/users/user.routes.js";
+import catalogRouter from "./modules/catalog/catalog.routes.js";
 
 export const app = express();
 
@@ -26,6 +27,7 @@ app.get("/health", (_req, res) => {
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/media", mediaRouter);
+app.use("/catalog", catalogRouter);
 
 app.use(userMgmtErrorHandler);
 app.use(mediaErrorHandler);

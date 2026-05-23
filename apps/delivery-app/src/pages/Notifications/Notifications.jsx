@@ -1,228 +1,304 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
+import {
+  getNotifications,
+  subscribeNotifications,
+  markAsRead,
+  markAllAsRead,
+} from "../../services/notificationStore.js";
+import {
+  ClipboardList,
+  Package,
+  Store,
+  Truck,
+  CheckCircle2,
+} from "lucide-react";
 import "./Notifications.css";
 
-// ── SVG helper ───────────────────────────────────────────────────────────────
-const Svg = ({ d, size = 18 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
-  </svg>
-);
 
-const IC = {
-  bell:    "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0",
-  search:  "M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z",
-  chevron: "M6 9l6 6 6-6",
-  check:   "M20 6L9 17l-5-5",
-  trash:   "M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6",
-  truck:   "M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm13 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z",
-  box:     "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z",
-  pickup:  "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
-  map:     "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0zM12 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z",
-  device:  "M12 18h.01M8 21h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z",
+// ─────────────────────────────────────────────
+// 🎨 Notification Icon Config (React icons)
+// ─────────────────────────────────────────────
+
+const ICON_CONFIG = {
+
+  task: {
+    bg: "#eef2ff",
+    color: "#4f46e5",
+    Icon: ClipboardList,
+  },
+  pickup: {
+    bg: "#fdf2f8",
+    color: "#db2777",
+    Icon: Package,
+  },
+  franchise: {
+    bg: "#f0fdf4",
+    color: "#16a34a",
+    Icon: Store,
+  },
+  delivery: {
+    bg: "#f0f9ff",
+    color: "#0284c7",
+    Icon: Truck,
+  },
+  completed: {
+    bg: "#fff7ed",
+    color: "#ea580c",
+    Icon: CheckCircle2,
+  },
 };
 
-// ── Notification Types config ─────────────────────────────────────────────────
-const TYPE_CONFIG = {
-  "Pickup Assigned":     { icon: IC.pickup,  color: "#7c3aed", bg: "#faf5ff" },
-  "Delivery Started":    { icon: IC.truck,   color: "#0284c7", bg: "#f0f9ff" },
-  "Device Picked":       { icon: IC.device,  color: "#ea580c", bg: "#fff7ed" },
-  "Out For Delivery":    { icon: IC.map,     color: "#2563eb", bg: "#eff6ff" },
-  "Delivered Successfully": { icon: IC.check, color: "#16a34a", bg: "#f0fdf4" },
-};
 
-const TYPES = ["All Types", ...Object.keys(TYPE_CONFIG)];
-const FILTER_STATUS = ["All", "Unread", "Read"];
+function useNotifications() {
+  const [notifications, setNotifications] = useState(() => getNotifications());
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-// ── Dummy Data ────────────────────────────────────────────────────────────────
-let _id = 1;
-const mk = (type, title, msg, time, read = false) =>
-  ({ id: _id++, type, title, msg, time, read });
+  useEffect(() => subscribeNotifications(setNotifications), []);
 
-const INIT_NOTIFICATIONS = [
-  mk("Pickup Assigned",       "New Pickup Assigned",           "Order ORD-4831 has been assigned to you. Pick up a Laptop from 12 MG Road, Buxar.",         "2 min ago",  false),
-  mk("Delivery Started",      "Delivery Started",              "You have started delivery for Order ORD-4822. Customer: Arjun Mehta.",                        "15 min ago", false),
-  mk("Device Picked",         "Device Picked Up",              "Smartphone for Order ORD-4828 successfully picked from 45 Park Street, Patna.",               "32 min ago", false),
-  mk("Out For Delivery",      "Out For Delivery",              "Order ORD-4825 is now out for delivery. Destination: 3 Ashoka Road, Ghazipur.",                "1 hr ago",   false),
-  mk("Delivered Successfully","Package Delivered",             "Order ORD-4823 delivered to Sunita Verma at 7 Civil Lines, Varanasi. Great job!",             "2 hrs ago",  true),
-  mk("Pickup Assigned",       "Pickup Task Ready",             "Order ORD-4832 awaiting pickup. Device: Tablet at 22 Park Ave, Chapra.",                      "3 hrs ago",  true),
-  mk("Delivery Started",      "Delivery Initiated",            "Order ORD-4819 delivery started for customer Meena Dubey.",                                   "4 hrs ago",  true),
-  mk("Delivered Successfully","Successful Delivery",           "Order ORD-4815 delivered to Amit Kumar at 19 Station Road, Motihari.",                        "5 hrs ago",  true),
-  mk("Out For Delivery",      "En Route to Customer",          "Order ORD-4810 is on the way to Kavita Singh, ETA 20 minutes.",                               "6 hrs ago",  true),
-  mk("Device Picked",         "Smartwatch Collected",          "Smartwatch for Order ORD-4807 collected from 14 Raja Park, Bhagalpur.",                       "Yesterday",  true),
-  mk("Pickup Assigned",       "Pickup Assigned – Earbuds",     "Order ORD-4801 earbuds pickup assigned. Location: 9 Ashoka Road, Ghazipur.",                  "Yesterday",  true),
-  mk("Delivered Successfully","Order Completed",               "Order ORD-4796 has been successfully delivered to Suresh Pandey.",                             "2 days ago", true),
-];
+  const refetch = () => setNotifications(getNotifications());
 
-// ── Card Component ────────────────────────────────────────────────────────────
-function NotificationCard({ notif, onMarkRead, onDelete }) {
-  const cfg = TYPE_CONFIG[notif.type];
+  const handleMarkRead = (id) => {
+    markAsRead(id);
+    setNotifications(getNotifications());
+  };
+
+  const handleMarkAll = () => {
+    markAllAsRead();
+    setNotifications(getNotifications());
+  };
+
+  return {
+    notifications,
+    loading,
+    error,
+    markAsRead: handleMarkRead,
+    markAllAsRead: handleMarkAll,
+    refetch,
+  };
+}
+
+// ─────────────────────────────────────────────
+// 🔔 Bell SVG
+// ─────────────────────────────────────────────
+function BellIcon() {
   return (
-    <div className={`notification-page-card${notif.read ? "" : " unread"}`}>
-      {/* Icon */}
-      <div className="notification-page-icon"
-        style={{ background: cfg.bg, color: cfg.color }}>
-        <Svg d={cfg.icon} />
-      </div>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+  );
+}
 
-      <div className="notification-page-card-body">
-        {/* Top row */}
-        <div className="notification-page-card-top">
-          <div className="notification-page-card-title-wrap">
-            {!notif.read && <span className="notification-page-unread-dot" />}
-            <span className="notification-page-card-title">{notif.title}</span>
-            <span className="notification-page-type-badge"
-              style={{ background: cfg.bg, color: cfg.color }}>
-              {notif.type}
-            </span>
-          </div>
-        </div>
+function NotifBoxIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+  );
+}
 
-        {/* Message */}
-        <div className="notification-page-card-msg">{notif.msg}</div>
+function ChevronIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  );
+}
 
-        {/* Footer */}
-        <div className="notification-page-card-footer">
-          <span className="notification-page-card-time">{notif.time}</span>
-          <div className="notification-page-card-btns">
-            {!notif.read && (
-              <button
-                className="notification-page-btn notification-page-btn-primary notification-page-btn-sm"
-                onClick={() => onMarkRead(notif.id)}>
-                Mark Read
-              </button>
-            )}
-            <button
-              className="notification-page-btn notification-page-btn-ghost notification-page-btn-sm"
-              onClick={() => onDelete(notif.id)}>
-              Delete
-            </button>
-          </div>
-        </div>
+// ─────────────────────────────────────────────
+// 💀 Skeleton Loader
+// ─────────────────────────────────────────────
+function SkeletonCard() {
+  return (
+    <div className="skeleton-card">
+      <div className="skeleton skeleton-icon" />
+      <div className="skeleton-body">
+        <div className="skeleton skeleton-title" />
+        <div className="skeleton skeleton-desc" />
       </div>
     </div>
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
-export default function Notifications() {
-  const [notifications, setNotifications] = useState(INIT_NOTIFICATIONS);
-  const [search,     setSearch]     = useState("");
-  const [typeFilt,   setTypeFilt]   = useState("All Types");
-  const [statusFilt, setStatusFilt] = useState("All");
+// ─────────────────────────────────────────────
+// 🃏 Single Notification Card
+// ─────────────────────────────────────────────
+function NotificationCard({ notification, onRead }) {
+  const cfg = ICON_CONFIG[notification.type] || ICON_CONFIG.task;
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return notifications.filter(n => {
-      const matchQ = !q ||
-        n.title.toLowerCase().includes(q) ||
-        n.msg.toLowerCase().includes(q) ||
-        n.type.toLowerCase().includes(q);
-      const matchType   = typeFilt === "All Types" || n.type === typeFilt;
-      const matchStatus = statusFilt === "All" ||
-        (statusFilt === "Unread" && !n.read) ||
-        (statusFilt === "Read"   &&  n.read);
-      return matchQ && matchType && matchStatus;
-    });
-  }, [notifications, search, typeFilt, statusFilt]);
-
-  const markRead   = (id) => setNotifications(p => p.map(n => n.id === id ? { ...n, read: true } : n));
-  const deleteOne  = (id) => setNotifications(p => p.filter(n => n.id !== id));
-  const markAllRead = ()  => setNotifications(p => p.map(n => ({ ...n, read: true })));
-  const deleteAll   = ()  => setNotifications(p => p.filter(n => n.read));
+  const handleClick = () => {
+    if (!notification.isRead) onRead(notification.id);
+  };
 
   return (
-    <div className="notification-page-wrapper">
+    <div
+      className={`notif-card ${!notification.isRead ? "unread" : ""}`}
+      onClick={handleClick}
+      style={{ animationDelay: `${notification.id * 60}ms` }}
+    >
+      <div
+        className="notif-card-icon"
+        style={{ background: cfg.bg, color: cfg.color }}
+      >
+        {cfg.Icon ? <cfg.Icon size={18} /> : null}
+      </div>
 
-  
 
-      <main className="notification-page-container">
+      <div className="notif-card-body">
+        <div className="notif-card-title">{notification.title}</div>
+        <div className="notif-card-desc">{notification.description}</div>
+      </div>
 
-        {/* Top Section */}
-  
+      <div className="notif-card-meta">
+        <span className="notif-card-time">{notification.time}</span>
+        {!notification.isRead && <span className="unread-dot" />}
+      </div>
+    </div>
+  );
+}
 
-        {/* Toolbar */}
-        <div className="notification-page-toolbar">
-          <div className="notification-page-search-wrap">
-            <svg className="notification-page-search-icon" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d={IC.search} />
-            </svg>
-            <input
-              className="notification-page-search"
-              type="text"
-              placeholder="Search notifications…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
+// ─────────────────────────────────────────────
+// 🏠 Main Page Component
+// ─────────────────────────────────────────────
+
+// 🔌 BACKEND READY: Replace with real user from auth context / API
+const USER = {
+  name: "Ramesh Kumar",
+  role: "Delivery Agent",
+  avatarUrl: null, // Set to image URL string when available
+};
+
+const TABS = [
+  { key: "all",     label: "All" },
+  { key: "unread",  label: "Unread" },
+  { key: "updates", label: "Updates" },
+  { key: "alerts",  label: "Alerts" },
+];
+
+export default function NotificationsPage() {
+  const [activeTab, setActiveTab] = useState("all");
+  const { notifications, loading, error, markAsRead, markAllAsRead, refetch } =
+    useNotifications();
+
+  // ── Derived counts
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  // ── Filtered list based on active tab
+  const filtered = notifications.filter((n) => {
+    if (activeTab === "all")    return true;
+    if (activeTab === "unread") return !n.isRead;
+    return n.category === activeTab;
+  });
+
+  // ── Tab label with dynamic count
+  const getTabLabel = (tab) => {
+    if (tab.key === "unread" && unreadCount > 0) return `Unread (${unreadCount})`;
+    return tab.label;
+  };
+
+  // ── Avatar initials fallback
+  const initials = USER.name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="notifications-page">
+      <div className="notifications-container">
+
+        {/* ── Header Card ── */}
+        <div className="notif-header-card">
+          <div className="notif-header-top">
+            <div className="notif-header-left">
+              <div className="notif-icon-box">
+                <NotifBoxIcon />
+              </div>
+              <span className="notif-title">Notifications</span>
+            </div>
+
+            <div className="notif-header-right">
+              {/* Bell */}
+              <div className="bell-wrapper" onClick={refetch} title="Refresh">
+                <BellIcon />
+                {unreadCount > 0 && (
+                  <span className="bell-badge">{unreadCount > 9 ? "9+" : unreadCount}</span>
+                )}
+              </div>
+
+              {/* User */}
+              <div className="user-profile">
+                {USER.avatarUrl ? (
+                  <img className="user-avatar" src={USER.avatarUrl} alt={USER.name} />
+                ) : (
+                  <div className="user-avatar-placeholder">{initials}</div>
+                )}
+                <div className="user-info">
+                  <span className="user-name">{USER.name}</span>
+                  <span className="user-role">{USER.role} <ChevronIcon /></span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Type filter */}
-          <div className="notification-page-select-wrap">
-            <select className="notification-page-select"
-              value={typeFilt} onChange={e => setTypeFilt(e.target.value)}>
-              {TYPES.map(t => <option key={t}>{t}</option>)}
-            </select>
-            <svg className="notification-page-select-arrow" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d={IC.chevron} />
-            </svg>
-          </div>
-
-          {/* Status filter */}
-          <div className="notification-page-select-wrap">
-            <select className="notification-page-select"
-              value={statusFilt} onChange={e => setStatusFilt(e.target.value)}>
-              {FILTER_STATUS.map(s => <option key={s}>{s}</option>)}
-            </select>
-            <svg className="notification-page-select-arrow" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d={IC.chevron} />
-            </svg>
-          </div>
+          <p className="notif-subtitle">Stay updated with your activities</p>
         </div>
 
-        {/* Bulk Actions + Count */}
-        <div className="notification-page-actions">
-          <div className="notification-page-count">
-            Showing {filtered.length} of {notifications.length} notifications
-          </div>
-          <div className="notification-page-bulk">
-            {unreadCount > 0 && (
-              <button className="notification-page-btn notification-page-btn-primary"
-                onClick={markAllRead}>
-                Mark All Read
-              </button>
-            )}
-            <button className="notification-page-btn notification-page-btn-ghost"
-              onClick={deleteAll}>
-              Delete Read
+        {/* ── Tabs ── */}
+        <div className="notif-tabs-bar">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              className={`tab-btn ${activeTab === tab.key ? "active" : ""}`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {getTabLabel(tab)}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Mark All Read ── */}
+        {unreadCount > 0 && !loading && (
+          <div className="notif-actions">
+            <button className="mark-all-btn" onClick={markAllAsRead}>
+              ✓ Mark all as read
             </button>
           </div>
-        </div>
+        )}
 
-        {/* List */}
-        <div className="notification-page-list">
-          {filtered.length === 0 ? (
-            <div className="notification-page-empty">
-              <div className="notification-page-empty-icon">🔔</div>
-              <div className="notification-page-empty-title">No notifications found</div>
-              <div className="notification-page-empty-text">Try adjusting your search or filters.</div>
-            </div>
-          ) : (
-            filtered.map(n => (
+        {/* ── Content ── */}
+        {error ? (
+          <div className="notif-empty">
+            <div className="notif-empty-icon">⚠️</div>
+            <p className="notif-empty-text">Failed to load notifications. <br /><br />
+              <button className="mark-all-btn" onClick={refetch}>Try again</button>
+            </p>
+          </div>
+        ) : loading ? (
+          <div className="notif-list">
+            {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="notif-empty">
+            <div className="notif-empty-icon">🔔</div>
+            <p className="notif-empty-text">No notifications here</p>
+          </div>
+        ) : (
+          <div className="notif-list">
+            {filtered.map((notif) => (
               <NotificationCard
-                key={n.id}
-                notif={n}
-                onMarkRead={markRead}
-                onDelete={deleteOne}
+                key={notif.id}
+                notification={notif}
+                onRead={markAsRead}
               />
-            ))
-          )}
-        </div>
-      </main>
+            ))}
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }

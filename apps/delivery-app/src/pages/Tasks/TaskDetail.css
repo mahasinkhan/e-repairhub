@@ -1,0 +1,377 @@
+/* ═══════════════════════════════════════════════
+   E-RepairHub · Task Detail
+   Light theme — exact match to design image
+═══════════════════════════════════════════════ */
+
+.td-root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ── Top bar ── */
+.td-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.td-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.td-back-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+/* ── Status badges ── */
+.td-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 40px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.td-status-pending   { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+.td-status-progress  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.td-status-completed { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.td-status-cancelled { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.td-status-rescheduled { background: #faf5ff; color: #7c3aed; border: 1px solid #e9d5ff; }
+
+.td-reschedule-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #faf5ff;
+  border: 1px solid #e9d5ff;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  color: #6d28d9;
+}
+
+.td-reschedule-banner p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #7c3aed;
+}
+
+.td-action-reschedule {
+  background: #fff7ed !important;
+  color: #c2410c !important;
+  border-color: #fed7aa !important;
+}
+
+.td-info-chip {
+  display: inline-block;
+  padding: 8px 14px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #15803d;
+  margin-bottom: 14px;
+}
+
+.td-pickup-proof {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.td-pickup-proof img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.td-pickup-proof span {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* ── Page title ── */
+.td-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+/* ── Card base ── */
+.td-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.td-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 16px;
+}
+
+/* ── Info row (2 cards side by side) ── */
+.td-info-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Info grid inside card */
+.td-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.td-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.td-info-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.td-info-label svg {
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.td-info-val {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.td-order-id {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: #6366f1;
+}
+
+/* Type badges */
+.td-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 40px;
+  font-size: 11px;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.td-type-pickup   { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.td-type-delivery { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+/* ── Special Instructions ── */
+.td-instructions-card {}
+
+.td-instructions-text {
+  font-size: 13px;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 9px;
+  padding: 12px 16px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── Bottom 3-col row ── */
+.td-bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.3fr;
+  gap: 16px;
+  align-items: start;
+}
+
+/* ── Task Status stepper ── */
+.td-status-card {}
+
+.td-steps {
+  display: flex;
+  flex-direction: column;
+}
+
+.td-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.td-step-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.step-icon {
+  flex-shrink: 0;
+}
+
+.step-done   { color: #16a34a; }
+.step-active { color: #2563eb; }
+.step-idle   { color: #cbd5e1; }
+
+.td-step-line {
+  width: 2px;
+  height: 28px;
+  background: #e2e8f0;
+  margin: 3px 0;
+  border-radius: 2px;
+}
+
+.step-line-done {
+  background: #16a34a;
+}
+
+.td-step-right {
+  padding-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.td-step-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.td-step-done-label   { color: #0f172a; font-weight: 600; }
+.td-step-active-label { color: #2563eb; font-weight: 700; }
+
+.td-step-sub {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.td-step-sub-active {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* ── Actions ── */
+.td-actions-card {}
+
+.td-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.td-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+  color: #fff;
+}
+
+.td-action-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.td-action-nav       { background: #2563eb; }
+.td-action-otp       { background: #16a34a; }
+.td-action-delivered { background: #7c3aed; }
+.td-action-upload    { background: #0891b2; }
+
+/* ── Route Map ── */
+.td-map-card {}
+
+.td-map-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  height: 200px;
+  background: #f1f5f9;
+}
+
+.td-map-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.td-map-pin {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(255,255,255,0.92);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  backdrop-filter: blur(4px);
+}
+
+.td-map-pin svg { color: #ef4444; flex-shrink: 0; }
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .td-bottom-row { grid-template-columns: 1fr 1fr; }
+  .td-map-card   { grid-column: 1 / -1; }
+}
+
+@media (max-width: 768px) {
+  .td-info-row   { grid-template-columns: 1fr; }
+  .td-bottom-row { grid-template-columns: 1fr; }
+  .td-map-card   { grid-column: auto; }
+}
+
+@media (max-width: 480px) {
+  .td-title { font-size: 17px; }
+  .td-card  { padding: 16px; }
+}
