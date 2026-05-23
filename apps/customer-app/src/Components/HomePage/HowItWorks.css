@@ -49,10 +49,9 @@
 }
 
 .hiw-title {
-  font-family: 'Syne', sans-serif;
   font-size: 42px;
-  
-  color: #0f172a;
+  font-weight: var(--fw-bold);
+  color: var(--text-heading);
   margin: 0 0 12px;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -60,7 +59,8 @@
 
 .hiw-sub {
   font-size: 15px;
-  color: #64748b;
+  font-weight: var(--fw-normal);
+  color: var(--text-body);
   margin: 0 0 64px;
   line-height: 1.6;
 }
@@ -139,9 +139,8 @@
   border-radius: 50%;
   background: linear-gradient(135deg, #3b82f6, #10b981);
   color: #ffffff;
-  font-family: 'Syne', sans-serif;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: var(--fw-bold);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -188,10 +187,9 @@
 }
 
 .hiw-card h3 {
-  font-family: 'Syne', sans-serif;
   font-size: 16px;
-  font-weight: 700;
-  color: #0f172a;
+  font-weight: var(--fw-bold);
+  color: var(--text-heading);
   margin: 0 0 8px;
   line-height: 1.3;
   transition: transform 260ms ease;
@@ -199,7 +197,8 @@
 
 .hiw-card p {
   font-size: 13.5px;
-  color: #64748b;
+  font-weight: var(--fw-normal);
+  color: var(--text-body);
   margin: 0;
   line-height: 1.65;
   transition: transform 260ms ease;
@@ -246,8 +245,8 @@
   border-radius: 12px;
   color: var(--dark-blue, #0b1f3a);
   font-size: 14px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
+  font-weight: var(--fw-bold);
+  font-family: var(--font-body);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);

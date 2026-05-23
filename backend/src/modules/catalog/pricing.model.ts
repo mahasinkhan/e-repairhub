@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
-export interface IPricing extends Document {
+export interface IPricing extends Omit<Document, 'model'> {
   model: Types.ObjectId;
   service: Types.ObjectId;
   basePrice: number;

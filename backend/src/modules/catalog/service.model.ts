@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-export interface IService extends Document {
+export interface IService extends Omit<Document, 'model'> {
   name: string;
   description?: string;
   estimatedTime?: string;

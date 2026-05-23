@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-export interface IVariant extends Document {
+export interface IVariant extends Omit<Document, 'model'> {
   name: string;
   colorCode: string;
   image?: string;

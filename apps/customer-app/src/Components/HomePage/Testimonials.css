@@ -32,16 +32,17 @@
 
 .tst-title {
   margin: 12px 0 8px;
-  color: #0f172a;
+  color: var(--text-heading);
   font-size: clamp(22px, 3vw, 34px);
-  font-weight: 900;
+  font-weight: var(--fw-bold);
   letter-spacing: -0.02em;
 }
 
 .tst-sub {
   margin: 0;
-  color: #64748b;
+  color: var(--text-body);
   font-size: 14px;
+  font-weight: var(--fw-normal);
   line-height: 1.65;
 }
 
@@ -71,7 +72,7 @@
 
 .tst-stat__value {
   font-size: 26px;
-  font-weight: 900;
+  font-weight: var(--fw-bold);
   color: #0ea5e9;
   letter-spacing: -0.02em;
 }
@@ -79,8 +80,8 @@
 .tst-stat__label {
   margin-top: 6px;
   font-size: 12px;
-  color: #64748b;
-  font-weight: 700;
+  color: var(--text-body);
+  font-weight: var(--fw-normal);
 }
 
 /* ===== TESTIMONIAL GRID ===== */
@@ -169,14 +170,14 @@
   place-items: center;
   background: linear-gradient(135deg, #0ea5e9, #2563eb);
   color: #fff;
-  font-weight: 900;
+  font-weight: var(--fw-bold);
   font-size: 13px;
   box-shadow: 0 10px 22px rgba(37, 99, 235, 0.22);
   flex-shrink: 0;
 }
 
 .tst-user__name {
-  font-weight: 900;
+  font-weight: var(--fw-bold);
   font-size: 12px;
   color: #0f172a;
   line-height: 1.1;

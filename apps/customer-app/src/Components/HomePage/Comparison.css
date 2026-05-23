@@ -2,8 +2,7 @@
 
 .cmp {
   padding: 20px 2px 80px;
-   background: #f4f6fb;
-  font-family: 'DM Sans', sans-serif;
+  background: #f4f6fb;
 }
 
 /* ── Head ── */
@@ -37,12 +36,11 @@
 
 .cmp-title {
   margin: 0;
-  font-family: 'DM Sans', sans-serif;
   font-size: clamp(28px, 4vw, 44px);
   line-height: 1.1;
   letter-spacing: -0.01em;
-  color: #0a0a0a;
-  font-weight: 700;
+  color: var(--text-heading);
+  font-weight: var(--fw-bold);
 }
 
 .cmp-title span {
@@ -81,7 +79,8 @@
 .cmp-cell {
   padding: 16px 20px;
   font-size: 13.5px;
-  color: #64748b;
+  font-weight: var(--fw-normal);
+  color: var(--text-body);
   text-align: center;
 }
 
@@ -110,14 +109,14 @@
 }
 
 .cmp-cell--feat {
-  font-weight: 500;
-  color: #0f172a;
+  font-weight: var(--fw-bold);
+  color: var(--text-heading);
   font-size: 13.5px;
 }
 
 .cmp-cell--good {
-  color: #0f172a;
-  font-weight: 500;
+  color: var(--text-heading);
+  font-weight: var(--fw-normal);
   font-size: 13.5px;
 }
 

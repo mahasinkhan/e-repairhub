@@ -35,11 +35,10 @@
 }
 
 .safe-title {
-  font-family: 'DM Sans', sans-serif;
   font-size: clamp(28px, 3.5vw, 42px);
   line-height: 1.1;
-  color: #0a0a0a;
-  font-weight: 700;
+  color: var(--text-heading);
+  font-weight: var(--fw-bold);
   margin-bottom: 12px;
 }
 
@@ -50,7 +49,8 @@
 
 .safe-subtitle {
   font-size: 14.5px;
-  color: #64748b;
+  font-weight: var(--fw-normal);
+  color: var(--text-body);
   max-width: 480px;
   margin: 0 auto;
   line-height: 1.7;
@@ -202,8 +202,8 @@
 
 .safe-card h3 {
   font-size: 15.5px;
-  font-weight: 700;
-  color: #0f172a;
+  font-weight: var(--fw-bold);
+  color: var(--text-heading);
   margin: 0;
   text-align: center;
   transition: transform 220ms ease;
@@ -211,8 +211,8 @@
 
 .safe-card p {
   font-size: 13.5px;
-  font-weight: 500;
-  color: #94a3b8;
+  font-weight: var(--fw-normal);
+  color: var(--text-muted);
   line-height: 1.55;
   margin: 0;
   text-align: center;

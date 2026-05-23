@@ -47,21 +47,21 @@
 
 .srv-title {
   font-size: clamp(28px, 4vw, 46px);
-  font-weight: 800;
-  color: #111;
+  font-weight: var(--fw-bold);
+  color: var(--text-heading);
   line-height: 1.15;
   margin-bottom: 12px;
-  font-family: 'DM Sans', sans-serif;
 }
 
 .srv-title em {
   font-style: normal;
-  color: #0AB4FF;;
+  color: #0AB4FF;
 }
 
 .srv-subtitle {
   font-size: 15px;
-  color: #888;
+  font-weight: var(--fw-normal);
+  color: var(--text-body);
   line-height: 1.7;
 }
 
@@ -112,9 +112,8 @@
  
   backdrop-filter: blur(8px);
 
-  font-family: 'Syne', sans-serif;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   letter-spacing: 0.5px;
   color: #333;
   padding: 6px 14px;
@@ -136,9 +135,8 @@
 }
 
 .srv-count-num {
-  font-family: 'Syne', sans-serif;
   font-size: 22px;
-  font-weight: 800;
+  font-weight: var(--fw-bold);
   color: #fff;
   line-height: 1;
 }
@@ -181,16 +179,15 @@
 }
 
 .srv-stat-val {
-  font-family: 'Syne', sans-serif;
   font-size: 16px;
-  font-weight: 800;
-  color: #111;
+  font-weight: var(--fw-bold);
+  color: var(--text-heading);
 }
 
 .srv-stat-lbl {
   font-size: 10px;
-  color: #aaa;
-  font-weight: 500;
+  color: var(--text-muted);
+  font-weight: var(--fw-normal);
   text-align: center;
 }
 
@@ -384,10 +381,9 @@
 .srv-card__name {
   margin: 0;
   text-align: center;
-  font-family: 'Syne', sans-serif;
   font-size: 12px;
-  font-weight: 800;
-  color: #111;
+  font-weight: var(--fw-bold);
+  color: var(--text-heading);
   line-height: 1.2;
 }
 

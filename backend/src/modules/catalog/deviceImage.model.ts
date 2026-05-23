@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-export interface IDeviceImage extends Document {
+export interface IDeviceImage extends Omit<Document, 'model'> {
   url: string;
   model: Types.ObjectId;
   variant?: Types.ObjectId;
