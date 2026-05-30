@@ -1,235 +1,115 @@
-// Earnings.jsx
+import { useEffect, useState } from "react";
+import { IndianRupee, RefreshCw, TrendingUp, Package, Percent } from "lucide-react";
+import { getMyEarnings } from "../services/franchise.api.js";
 
-import React, { useState } from "react";
-import "./../styles/earnings.css";
+export default function Earnings() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-const monthlyData = {
-  All: {
-    totalOrders: 328,
-    totalRevenue: "₹4,34,500",
-    totalCommission: "₹82,000",
-    bars: [90, 130, 110, 160, 200, 170],
-  },
-  January: {
-    totalOrders: 42,
-    totalRevenue: "₹48,000",
-    totalCommission: "₹9,000",
-    bars: [60, 90, 70, 120, 150, 100],
-  },
-  February: {
-    totalOrders: 58,
-    totalRevenue: "₹72,000",
-    totalCommission: "₹13,500",
-    bars: [90, 130, 100, 150, 180, 140],
-  },
-  March: {
-    totalOrders: 76,
-    totalRevenue: "₹1,04,000",
-    totalCommission: "₹19,000",
-    bars: [100, 140, 120, 170, 210, 180],
-  },
-  April: {
-    totalOrders: 63,
-    totalRevenue: "₹86,000",
-    totalCommission: "₹16,000",
-    bars: [80, 120, 110, 160, 190, 150],
-  },
-  May: {
-    totalOrders: 89,
-    totalRevenue: "₹1,24,500",
-    totalCommission: "₹22,000",
-    bars: [110, 150, 130, 190, 230, 200],
-  },
-};
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await getMyEarnings();
+      setData(res);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-const BAR_COLORS = [
-  "#2563eb", // blue
-  "#dc2626", // red
-  "#16a34a", // green
-  "#ca8a04", // yellow
-  "#0891b2", // cyan
-  "#7c3aed", // violet
-];
+  useEffect(() => { load(); }, []);
 
-const WEEK_LABELS = [
-  "Week 1",
-  "Week 2",
-  "Week 3",
-  "Week 4",
-  "Week 5",
-  "Week 6",
-];
-
-// --- SVG Icons ---
-
-const OrdersIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-    <line x1="3" y1="6" x2="21" y2="6"/>
-    <path d="M16 10a4 4 0 01-8 0"/>
-  </svg>
-);
-
-const RevenueIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="1" x2="12" y2="23"/>
-    <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-  </svg>
-);
-
-const CommissionIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-    <polyline points="14 2 14 8 20 8"/>
-    <line x1="16" y1="13" x2="8" y2="13"/>
-    <line x1="16" y1="17" x2="8" y2="17"/>
-  </svg>
-);
-
-// --- Main Component ---
-
-const Earnings = () => {
-  const [selectedMonth, setSelectedMonth] = useState("All");
-
-  const currentData = monthlyData[selectedMonth];
-
-  return (
-    <div className="earnings-page">
-
-      {/* FILTERS */}
-      <div className="earnings-filters">
-        <div className="filter-box">
-          <label>Select Month</label>
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-          >
-            {Object.keys(monthlyData).map((month) => (
-              <option key={month} value={month}>
-                {month}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* SUMMARY CARDS */}
-      <div className="earnings-cards">
-
-        <div className="earnings-card">
-          <div className="card-icon icon-orders">
-            <OrdersIcon />
-          </div>
-          <div className="card-info">
-            <h3>Total Orders</h3>
-            <h2>{currentData.totalOrders}</h2>
-          </div>
-        </div>
-
-        <div className="earnings-card">
-          <div className="card-icon icon-revenue">
-            <RevenueIcon />
-          </div>
-          <div className="card-info">
-            <h3>Total Revenue</h3>
-            <h2>{currentData.totalRevenue}</h2>
-          </div>
-        </div>
-
-        <div className="earnings-card">
-          <div className="card-icon icon-commission">
-            <CommissionIcon />
-          </div>
-          <div className="card-info">
-            <h3>Total Commission</h3>
-            <h2>{currentData.totalCommission}</h2>
-          </div>
-        </div>
-
-      </div>
-
-      {/* CHART SECTION */}
-      <div className="earnings-chart-section">
-
-        <div className="chart-header">
-          <h3>Revenue Analytics</h3>
-          <p>Monthly repair revenue generated</p>
-        </div>
-
-        {/* BARS */}
-        <div className="chart-bars">
-          {currentData.bars.map((height, index) => (
-            <div className="bar-item" key={index}>
-
-              {/* Value + label shown above bar — always visible */}
-              <div className="bar-tooltip">
-                <span className="tooltip-value">
-                  ₹{(height * 500).toLocaleString()}
-                </span>
-                <span className="tooltip-label">
-                  {WEEK_LABELS[index]}
-                </span>
-              </div>
-
-              <div
-                className="bar"
-                style={{
-                  height: `${height}px`,
-                  background: BAR_COLORS[index],
-                }}
-              ></div>
-
-              <span>W{index + 1}</span>
-
-            </div>
-          ))}
-        </div>
-
-      </div>
-
-      {/* TABLE SECTION */}
-      <div className="earnings-table-wrapper">
-
-        <div className="table-header">
-          <h3>Earnings Summary</h3>
-          <p>Revenue and orders overview</p>
-        </div>
-
-        <table className="earnings-table">
-          <thead>
-            <tr>
-              <th>Month</th>
-              <th>Total Orders</th>
-              <th>Total Revenue</th>
-              <th>Total Commission</th>
-              <th>Net Earnings</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(monthlyData)
-              .filter(([month]) => month !== "All")
-              .map(([month, data], index) => (
-                <tr key={index}>
-                  <td>{month}</td>
-                  <td>{data.totalOrders}</td>
-                  <td>{data.totalRevenue}</td>
-                  <td>{data.totalCommission}</td>
-                  <td className="net-earning">
-                    ₹
-                    {(
-                      parseInt(data.totalRevenue.replace(/[₹,]/g, "")) -
-                      parseInt(data.totalCommission.replace(/[₹,]/g, ""))
-                    ).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
-
-      </div>
-
+  if (loading) return (
+    <div className="content-shell p-6 flex items-center justify-center py-24 text-slate-400">
+      <RefreshCw className="w-5 h-5 animate-spin mr-2" /> Loading earnings...
     </div>
   );
-};
 
-export default Earnings;
+  return (
+    <div className="content-shell p-6 space-y-6">
+
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Earnings</h1>
+          <p className="text-slate-500 text-sm mt-1">Your commission earnings from completed repairs</p>
+        </div>
+        <button onClick={load} className="flex items-center gap-2 px-4 py-2 border border-slate-200 bg-white rounded-xl text-slate-600 text-sm hover:bg-slate-50 transition shadow-sm">
+          <RefreshCw className="w-4 h-4" /> Refresh
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Total Revenue", value: `₹${Number(data?.totalRevenue ?? 0).toLocaleString("en-IN")}`, icon: IndianRupee, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" },
+          { label: "Your Commission", value: `₹${Number(data?.totalCommission ?? 0).toLocaleString("en-IN")}`, icon: TrendingUp, color: "text-green-600", bg: "bg-green-50", border: "border-green-100" },
+          { label: "Commission Rate", value: `${data?.commissionPercent ?? 0}%`, icon: Percent, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+          { label: "Completed Orders", value: data?.totalOrders ?? 0, icon: Package, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
+        ].map(stat => {
+          const Icon = stat.icon;
+          return (
+            <div key={stat.label} className={`bg-white border ${stat.border} rounded-2xl p-5 shadow-sm`}>
+              <div className={`w-10 h-10 ${stat.bg} rounded-xl flex items-center justify-center mb-3`}>
+                <Icon className={`w-5 h-5 ${stat.color}`} />
+              </div>
+              <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
+              <p className="text-sm text-slate-500 mt-1">{stat.label}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Orders table */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100">
+          <h3 className="font-semibold text-slate-800">Earnings Breakdown</h3>
+          <p className="text-xs text-slate-400 mt-0.5">Per completed order</p>
+        </div>
+
+        {!data?.orders?.length ? (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+            <IndianRupee className="w-10 h-10 mb-3 opacity-30" />
+            <p className="text-sm">No completed orders yet</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  {["Order", "Customer", "Service", "Revenue", "Commission", "Date"].map(h => (
+                    <th key={h} className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {data.orders.map(order => (
+                  <tr key={order._id} className="hover:bg-slate-50 transition">
+                    <td className="px-5 py-3.5 font-semibold text-slate-800">{order.orderNumber}</td>
+                    <td className="px-5 py-3.5 text-slate-600">{order.customer?.name}</td>
+                    <td className="px-5 py-3.5 text-slate-500">{order.serviceType}</td>
+                    <td className="px-5 py-3.5 font-medium text-slate-700">₹{Number(order.price).toLocaleString("en-IN")}</td>
+                    <td className="px-5 py-3.5">
+                      <span className="font-bold text-green-700">₹{Number(order.commission).toLocaleString("en-IN")}</span>
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-400 text-xs">
+                      {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-slate-50 border-t border-slate-200">
+                  <td colSpan={3} className="px-5 py-3 text-sm font-semibold text-slate-700">Total</td>
+                  <td className="px-5 py-3 font-bold text-slate-800">₹{Number(data.totalRevenue).toLocaleString("en-IN")}</td>
+                  <td className="px-5 py-3 font-bold text-green-700">₹{Number(data.totalCommission).toLocaleString("en-IN")}</td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

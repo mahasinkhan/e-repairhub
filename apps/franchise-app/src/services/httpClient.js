@@ -1,17 +1,15 @@
 import axios from "axios";
 
-const baseURL = import.meta.env.VITE_API_URL || "";
+const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-export const httpClient = axios.create({
+const httpClient = axios.create({
   baseURL,
   headers: { "Content-Type": "application/json" },
 });
 
 httpClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
@@ -21,9 +19,7 @@ httpClient.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      window.location.assign(
-        new URL("login", window.location.origin + import.meta.env.BASE_URL).href
-      );
+      window.location.assign("/login");
     }
     return Promise.reject(err);
   }

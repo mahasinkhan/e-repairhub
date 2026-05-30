@@ -1,264 +1,225 @@
-// Orders.jsx (Updated)
-// - Pending rows: "Assign" button → opens assign modal → order goes to Delivery page
-// - Repairing rows: "Complete" button → delivery boy gets notified to pickup from shop
-
-import React, { useState } from "react";
-import "./../styles/orders.css";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Search,
-  SlidersHorizontal,
-  Download,
-  MoreHorizontal,
-  UserPlus,
-  CheckCircle,
-  X,
+  RefreshCw, Package, Eye, CheckCircle, XCircle,
+  Search, ChevronRight,
 } from "lucide-react";
-import { initialOrders } from "./Order.js";
+import { getMyOrders, acceptOrder, rejectOrder } from "../services/franchise.api.js";
 
-const deliveryBoys = [
-  { id: "DB-01", name: "Ravi Kumar" },
-  { id: "DB-02", name: "Suresh Pal" },
-  { id: "DB-03", name: "Deepak Singh" },
+const TABS = [
+  { label: "All", value: "all" },
+  { label: "New", value: "assigned" },
+  { label: "Confirmed", value: "confirmed" },
+  { label: "Received", value: "picked" },
+  { label: "Repairing", value: "repairing" },
+  { label: "Completed", value: "completed" },
+  { label: "Delivered", value: "delivered" },
+  { label: "Cancelled", value: "cancelled" },
 ];
 
-const Orders = ({ orders = initialOrders, setOrders = () => {} }) => {
-  const [activeFilter, setActiveFilter] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [assignModal, setAssignModal] = useState(null); // order to assign
-  const [selectedBoy, setSelectedBoy] = useState("");
-  const [toast, setToast] = useState(null);
+const STATUS_COLORS = {
+  assigned: "bg-orange-100 text-orange-700",
+  confirmed: "bg-blue-100 text-blue-700",
+  picked: "bg-cyan-100 text-cyan-700",
+  repairing: "bg-yellow-100 text-yellow-700",
+  completed: "bg-green-100 text-green-700",
+  delivered: "bg-teal-100 text-teal-700",
+  cancelled: "bg-red-100 text-red-700",
+  placed: "bg-slate-100 text-slate-600",
+};
 
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+function StatusBadge({ status }) {
+  return (
+    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_COLORS[status] ?? "bg-slate-100 text-slate-600"}`}>
+      {status}
+    </span>
+  );
+}
+
+export default function Orders() {
+  const navigate = useNavigate();
+  const [orders, setOrders] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
+  const [search, setSearch] = useState("");
+  const [actionId, setActionId] = useState(null);
+  const [rejectModal, setRejectModal] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await getMyOrders({ status: activeTab, limit: 50 });
+      setOrders(res.orders ?? []);
+      setTotal(res.total ?? 0);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filteredOrders = orders
-    .filter((o) =>
-      activeFilter === "All" ? true : o.status === activeFilter
-    )
-    .filter((o) =>
-      searchQuery.trim() === ""
-        ? true
-        : o.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          o.device.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  useEffect(() => { load(); }, [activeTab]);
 
-  const handleAssign = () => {
-    if (!selectedBoy) return;
-    const boy = deliveryBoys.find((b) => b.id === selectedBoy);
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === assignModal.id
-          ? { ...o, status: "Assigned", assignedTo: boy.name, pickedUp: false }
-          : o
+  const filtered = search.trim()
+    ? orders.filter(o =>
+        o.orderNumber?.toLowerCase().includes(search.toLowerCase()) ||
+        o.customer?.name?.toLowerCase().includes(search.toLowerCase())
       )
-    );
-    showToast(`Order ${assignModal.id} assigned to ${boy.name}`);
-    setAssignModal(null);
-    setSelectedBoy("");
+    : orders;
+
+  const handleAccept = async (id) => {
+    setActionId(id);
+    try {
+      await acceptOrder(id);
+      load();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setActionId(null);
+    }
   };
 
-  const handleComplete = (order) => {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === order.id ? { ...o, status: "ReadyForPickup" } : o
-      )
-    );
-    showToast(`Order ${order.id} marked ready — delivery boy notified!`);
+  const handleReject = async () => {
+    if (!rejectReason.trim()) return alert("Reason is required");
+    setActionId(rejectModal);
+    try {
+      await rejectOrder(rejectModal, rejectReason);
+      setRejectModal(null);
+      setRejectReason("");
+      load();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setActionId(null);
+    }
   };
 
   return (
-    <div className="orders-page">
+    <div className="content-shell p-6 space-y-5">
 
-      {/* Toast */}
-      {toast && (
-        <div className={`orders-toast ${toast.type}`}>
-          {toast.msg}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Orders</h1>
+          <p className="text-slate-500 text-sm mt-1">Manage orders assigned to your franchise</p>
         </div>
-      )}
-
-      {/* Top Section */}
-      <div className="orders-header">
-        <h1>Repair Orders</h1>
-        <p>Track and manage all customer repair requests</p>
+        <button onClick={load} className="flex items-center gap-2 px-4 py-2 border border-slate-200 bg-white rounded-xl text-slate-600 text-sm hover:bg-slate-50 transition shadow-sm">
+          <RefreshCw className="w-4 h-4" /> Refresh
+        </button>
       </div>
 
-      {/* Filters */}
-      <div className="orders-filters">
-        <div className="status-filters">
-          {["All", "Completed", "Repairing", "Pending", "Cancelled", "Delivered", "Assigned", "ReadyForPickup"].map(
-            (item) => (
-              <button
-                key={item}
-                className={activeFilter === item ? "active-filter" : ""}
-                onClick={() => setActiveFilter(item)}
-              >
-                {item === "ReadyForPickup" ? "Ready for Pickup" : item}
+      {/* Card */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+
+        {/* Tabs */}
+        <div className="border-b border-slate-200 overflow-x-auto">
+          <div className="flex px-4 min-w-max">
+            {TABS.map(tab => (
+              <button key={tab.value} onClick={() => setActiveTab(tab.value)}
+                className={`px-4 py-3.5 text-sm font-medium border-b-2 transition whitespace-nowrap ${
+                  activeTab === tab.value ? "border-blue-500 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}>
+                {tab.label}
               </button>
-            )
+            ))}
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="px-4 py-3 border-b border-slate-100">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search order, customer..."
+              className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition" />
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-16 text-slate-400">
+              <RefreshCw className="w-5 h-5 animate-spin mr-2" /> Loading...
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+              <Package className="w-10 h-10 mb-3 opacity-30" />
+              <p className="text-sm">No orders found</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  {["Order", "Customer", "Device", "Service", "Amount", "Status", "Actions"].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map(order => (
+                  <tr key={order._id} className="hover:bg-slate-50 transition">
+                    <td className="px-4 py-3.5 font-semibold text-slate-800 whitespace-nowrap">{order.orderNumber}</td>
+                    <td className="px-4 py-3.5">
+                      <p className="font-medium text-slate-700">{order.customer?.name}</p>
+                      <p className="text-xs text-slate-400">{order.customer?.phone}</p>
+                    </td>
+                    <td className="px-4 py-3.5 text-slate-600 whitespace-nowrap">{order.deviceDetails?.model}</td>
+                    <td className="px-4 py-3.5 text-slate-500 whitespace-nowrap">{order.serviceType}</td>
+                    <td className="px-4 py-3.5 font-semibold text-slate-700">₹{Number(order.price).toLocaleString("en-IN")}</td>
+                    <td className="px-4 py-3.5"><StatusBadge status={order.status} /></td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-1.5">
+                        {/* Accept button for new/assigned orders */}
+                        {["assigned", "placed"].includes(order.status) && (
+                          <>
+                            <button onClick={() => handleAccept(order._id)} disabled={actionId === order._id}
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg transition disabled:opacity-50">
+                              <CheckCircle className="w-3 h-3" /> Accept
+                            </button>
+                            <button onClick={() => { setRejectModal(order._id); setRejectReason(""); }}
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition">
+                              <XCircle className="w-3 h-3" /> Reject
+                            </button>
+                          </>
+                        )}
+                        <button onClick={() => navigate(`/repair?orderId=${order._id}`)}
+                          className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
+                          <Eye className="w-3 h-3" /> View
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
 
-        <div className="table-actions">
-          <button>
-            <SlidersHorizontal size={18} />
-            Columns
-          </button>
-          <button>
-            <Download size={18} />
-            Export
-          </button>
+        <div className="px-4 py-3 border-t border-slate-100">
+          <p className="text-xs text-slate-400">Showing {filtered.length} of {total} orders</p>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="search-box">
-        <Search size={20} />
-        <input
-          type="text"
-          placeholder="Search repair orders..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-
-      {/* Table */}
-      <div className="orders-table-wrapper">
-        <table className="orders-table">
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>Customer</th>
-              <th>Device</th>
-              <th>Status</th>
-              <th>Date</th>
-              <th>Amount</th>
-              <th>Action</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredOrders.map((order, index) => (
-              <tr key={index}>
-                <td className="order-id">{order.id}</td>
-
-                <td>
-                  <div className="customer-info">
-                    <div className="avatar">{order.customer.charAt(0)}</div>
-                    <div>
-                      <h4>{order.customer}</h4>
-                      <p>{order.email}</p>
-                    </div>
-                  </div>
-                </td>
-
-                <td>{order.device}</td>
-
-                <td>
-                  <span className={`status-badge ${order.status.toLowerCase().replace(/\s/g, "")}`}>
-                    {order.status === "ReadyForPickup" ? "Ready for Pickup" : order.status}
-                  </span>
-                </td>
-
-                <td>{order.date}</td>
-                <td className="amount">{order.amount}</td>
-
-                {/* ACTION COLUMN */}
-                <td>
-                  {order.status === "Pending" && (
-                    <button
-                      className="action-btn assign-btn"
-                      onClick={() => setAssignModal(order)}
-                    >
-                      <UserPlus size={15} />
-                      Assign
-                    </button>
-                  )}
-                  {order.status === "Repairing" && (
-                    <button
-                      className="action-btn complete-btn"
-                      onClick={() => handleComplete(order)}
-                    >
-                      <CheckCircle size={15} />
-                      Complete
-                    </button>
-                  )}
-                  {order.status === "Assigned" && (
-                    <span className="assigned-label">
-                      👤 {order.assignedTo}
-                    </span>
-                  )}
-                  {order.status === "ReadyForPickup" && (
-                    <span className="pickup-label">
-                      📦 Pickup Pending
-                    </span>
-                  )}
-                </td>
-
-                <td>
-                  <button className="more-btn">
-                    <MoreHorizontal size={20} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Assign Modal */}
-      {assignModal && (
-        <div className="modal-overlay" onClick={() => setAssignModal(null)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Assign Delivery Boy</h3>
-              <button className="modal-close" onClick={() => setAssignModal(null)}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p className="modal-order-info">
-                <span>{assignModal.id}</span> — {assignModal.device} — {assignModal.customer}
-              </p>
-              <label>Select Delivery Boy</label>
-              <div className="boy-list">
-                {deliveryBoys.map((boy) => (
-                  <div
-                    key={boy.id}
-                    className={`boy-card ${selectedBoy === boy.id ? "selected" : ""}`}
-                    onClick={() => setSelectedBoy(boy.id)}
-                  >
-                    <div className="boy-avatar">{boy.name.charAt(0)}</div>
-                    <div>
-                      <p className="boy-name">{boy.name}</p>
-                      <p className="boy-id">{boy.id}</p>
-                    </div>
-                    {selectedBoy === boy.id && (
-                      <CheckCircle size={18} className="boy-check" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="modal-cancel" onClick={() => setAssignModal(null)}>
-                Cancel
-              </button>
-              <button
-                className={`modal-confirm ${!selectedBoy ? "disabled" : ""}`}
-                onClick={handleAssign}
-                disabled={!selectedBoy}
-              >
-                Confirm Assign
-              </button>
+      {/* Reject modal */}
+      {rejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 className="font-semibold text-slate-800 mb-4">Reject Order</h3>
+            <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)}
+              placeholder="Enter rejection reason..."
+              rows={3}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 resize-none mb-4" />
+            <div className="flex gap-3">
+              <button onClick={() => setRejectModal(null)}
+                className="flex-1 border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium rounded-lg py-2.5 text-sm transition">Cancel</button>
+              <button onClick={handleReject} disabled={!!actionId}
+                className="flex-1 bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white font-semibold rounded-lg py-2.5 text-sm transition">Confirm Reject</button>
             </div>
           </div>
         </div>
       )}
     </div>
   );
-};
-
-export default Orders;
+}

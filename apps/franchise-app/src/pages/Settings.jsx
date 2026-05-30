@@ -1,84 +1,130 @@
-import { useState } from 'react'
-import '../styles/settings.css'
-import '../styles/profile.css'
-
-function ToggleRow({ title, description, initial = false }) {
-  const [on, setOn] = useState(initial)
-  return (
-    <div className="setting-row">
-      <div>
-        <strong>{title}</strong>
-        <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-          {description}
-        </p>
-      </div>
-      <button
-        type="button"
-        className={`toggle${on ? ' toggle--on' : ''}`}
-        onClick={() => setOn((v) => !v)}
-        aria-pressed={on}
-        aria-label={title}
-      >
-        <span className="toggle-knob" />
-      </button>
-    </div>
-  )
-}
+import { useState } from "react";
+import { Settings as SettingsIcon, Moon, Sun, Bell, Shield, User, Save } from "lucide-react";
 
 export default function Settings() {
-  return (
-    <div className="content-shell">
-      <header style={{ marginBottom: '1.5rem' }}>
-        <h2 className="page-title">Settings</h2>
-        <p className="page-subtitle">
-          Account preferences, notifications, and security posture for this franchise login.
-        </p>
-      </header>
+  const user = (() => { try { return JSON.parse(localStorage.getItem("user")) || {}; } catch { return {}; } })();
+  const [darkMode, setDarkMode] = useState(false);
+  const [notifications, setNotifications] = useState({ orderUpdates: true, earnings: true, system: false });
+  const [saved, setSaved] = useState(false);
 
-      <section className="settings-section">
-        <h3>Notifications</h3>
-        <p>Choose how your team hears about SLA changes, payouts, and courier exceptions.</p>
-        <ToggleRow
-          title="Push alerts for SLA breaches"
-          description="Instant banner inside the panel when a ticket crosses its promise window."
-          initial
-        />
-        <ToggleRow
-          title="Email digest (daily)"
-          description="Summarized franchise health snapshot every morning at 7:00 AM IST."
-        />
-        <ToggleRow
-          title="SMS for critical courier failures"
-          description="Only for OTP mismatch or three consecutive failed delivery attempts."
-        />
-      </section>
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
 
-      <section className="settings-section">
-        <h3>Account &amp; security</h3>
-        <p>These controls affect how operators authenticate when using shared front-desk devices.</p>
-        <ToggleRow
-          title="Require PIN re-entry after 10 minutes idle"
-          description="Recommended for storefront kiosks with rotating staff."
-          initial
-        />
-        <ToggleRow
-          title="Mask customer phone numbers on printouts"
-          description="Shows last four digits only on thermal job cards."
-        />
-      </section>
-
-      <section className="settings-section">
-        <h3>Billing &amp; exports</h3>
-        <p>Defaults for finance reconciliation with your own accounting stack.</p>
-        <div className="form-field" style={{ marginBottom: 0 }}>
-          <label htmlFor="export">Default export format</label>
-          <select id="export" defaultValue="xlsx" style={{ maxWidth: 280 }}>
-            <option value="xlsx">Excel (.xlsx)</option>
-            <option value="csv">CSV</option>
-            <option value="zip">ZIP bundle (CSV + PDF)</option>
-          </select>
-        </div>
-      </section>
+  const Card = ({ title, icon: Icon, children }) => (
+    <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: "22px 24px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", marginBottom: 18 }}>
+      <h3 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 18 }}>
+        <Icon size={16} color="#64748b" /> {title}
+      </h3>
+      {children}
     </div>
-  )
+  );
+
+  const Toggle = ({ label, desc, checked, onChange }) => (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #f1f5f9" }}>
+      <div>
+        <p style={{ fontSize: 14, fontWeight: 600, color: "#1e293b", margin: 0 }}>{label}</p>
+        {desc && <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{desc}</p>}
+      </div>
+      <button onClick={onChange} style={{
+        width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
+        background: checked ? "#3b82f6" : "#e2e8f0", position: "relative", transition: "background .2s",
+      }}>
+        <span style={{
+          position: "absolute", top: 2, left: checked ? 22 : 2,
+          width: 20, height: 20, borderRadius: "50%", background: "#fff",
+          transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+        }} />
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="content-shell" style={{ padding: "24px 28px", maxWidth: 600 }}>
+
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#1e293b", margin: 0 }}>Settings</h1>
+        <p style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>Manage your franchise panel preferences</p>
+      </div>
+
+      {/* Account info */}
+      <Card title="Account" icon={User}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "4px 0 16px" }}>
+          <div style={{ width: 52, height: 52, borderRadius: "50%", background: "linear-gradient(135deg, #3b82f6, #1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 20 }}>
+            {user.name?.charAt(0)?.toUpperCase() ?? "F"}
+          </div>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: 15, color: "#1e293b", margin: 0 }}>{user.name ?? "Franchise User"}</p>
+            <p style={{ fontSize: 13, color: "#64748b", marginTop: 2 }}>{user.email}</p>
+            <span style={{ background: "#eff6ff", color: "#1d4ed8", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>Franchise</span>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, borderTop: "1px solid #f1f5f9", paddingTop: 16 }}>
+          {[["Username", user.username ?? "—"], ["Role", "Franchise"]].map(([label, val]) => (
+            <div key={label}>
+              <p style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>{val}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Appearance */}
+      <Card title="Appearance" icon={darkMode ? Moon : Sun}>
+        <Toggle
+          label="Dark Mode"
+          desc="Switch to dark theme (coming soon)"
+          checked={darkMode}
+          onChange={() => setDarkMode(d => !d)}
+        />
+      </Card>
+
+      {/* Notifications */}
+      <Card title="Notifications" icon={Bell}>
+        <Toggle
+          label="Order Updates"
+          desc="Get notified when orders are assigned or status changes"
+          checked={notifications.orderUpdates}
+          onChange={() => setNotifications(n => ({ ...n, orderUpdates: !n.orderUpdates }))}
+        />
+        <Toggle
+          label="Earnings Alerts"
+          desc="Get notified about commission and payment updates"
+          checked={notifications.earnings}
+          onChange={() => setNotifications(n => ({ ...n, earnings: !n.earnings }))}
+        />
+        <Toggle
+          label="System Alerts"
+          desc="Get notified about system maintenance and updates"
+          checked={notifications.system}
+          onChange={() => setNotifications(n => ({ ...n, system: !n.system }))}
+        />
+      </Card>
+
+      {/* Security */}
+      <Card title="Security" icon={Shield}>
+        <div style={{ padding: "8px 0" }}>
+          <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>
+            To change your password, contact your admin or use the user management panel.
+          </p>
+          <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "12px 16px" }}>
+            <p style={{ fontSize: 13, color: "#15803d", fontWeight: 600, margin: 0 }}>✓ Your account is secure</p>
+            <p style={{ fontSize: 12, color: "#16a34a", marginTop: 4 }}>Logged in as {user.email}</p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Save */}
+      <button onClick={handleSave} style={{
+        display: "flex", alignItems: "center", gap: 8, padding: "12px 24px",
+        background: saved ? "#22c55e" : "#1d4ed8", color: "#fff",
+        border: "none", borderRadius: 12, fontSize: 14, fontWeight: 700,
+        cursor: "pointer", transition: "background .2s", boxShadow: "0 2px 8px rgba(29,78,216,0.3)",
+      }}>
+        <Save size={16} />
+        {saved ? "Saved!" : "Save Preferences"}
+      </button>
+    </div>
+  );
 }

@@ -16,5 +16,8 @@
     "dev:customer": "npm run dev -w customer-app",
     "dev:delivery": "npm run dev -w delivery-app",
     "seed:users": "npm run seed:users -w @e-repairhub/backend"
+  },
+  "dependencies": {
+    "zustand": "^5.0.13"
   }
 }

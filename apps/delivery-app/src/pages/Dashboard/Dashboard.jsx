@@ -1,379 +1,212 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  ClipboardList,
-  PackageSearch,
-  Truck,
-  CheckCircle2,
-  TrendingUp,
-  TrendingDown,
-  MapPin,
-  ChevronRight,
-  IndianRupee,
-  ChevronDown,
-} from 'lucide-react'
-import './Dashboard.css'
+  Truck, Package, CheckCircle, XCircle,
+  Clock, TrendingUp, RefreshCw, ArrowRight,
+  MapPin, Phone, Calendar,
+} from "lucide-react";
+import { getMyTasks, getMyStats } from "../../services/delivery.api.js";
 
-/* ─────────────────────────────────────────
-   DUMMY DATA  (swap with API calls later)
-───────────────────────────────────────── */
-function getAgentGreeting() {
-  try {
-    const user = JSON.parse(localStorage.getItem('user') || 'null')
-    const full = user?.name || 'Ramesh Kumar'
-    const first = full.split(/\s+/)[0] || 'Ramesh'
-    return { first, full }
-  } catch {
-    return { first: 'Ramesh', full: 'Ramesh Kumar' }
-  }
-}
+const STATUS_CONFIG = {
+  pending:     { label: "Pending",     color: "#854d0e", bg: "#fef9c3", border: "#fde047" },
+  accepted:    { label: "Accepted",    color: "#1d4ed8", bg: "#dbeafe", border: "#93c5fd" },
+  in_progress: { label: "In Progress", color: "#c2410c", bg: "#ffedd5", border: "#fdba74" },
+  completed:   { label: "Completed",   color: "#15803d", bg: "#dcfce7", border: "#86efac" },
+  failed:      { label: "Failed",      color: "#b91c1c", bg: "#fee2e2", border: "#fca5a5" },
+  rejected:    { label: "Rejected",    color: "#475569", bg: "#f1f5f9", border: "#cbd5e1" },
+};
 
-const TODAY = new Date().toLocaleDateString('en-IN', {
-  day: '2-digit',
-  month: 'long',
-  year: 'numeric',
-})
-
-const STATS = [
-  {
-    key: 'tasks',
-    label: "Today's Tasks",
-    value: 5,
-    sub: '+2 from yesterday',
-    up: true,
-    icon: ClipboardList,
-    color: 'stat-blue',
-  },
-  {
-    key: 'pickups',
-    label: 'Pending Pickups',
-    value: 7,
-    sub: '3 urgent',
-    up: false,
-    icon: PackageSearch,
-    color: 'stat-orange',
-  },
-  {
-    key: 'deliveries',
-    label: 'Pending Deliveries',
-    value: 3,
-    sub: 'Out for delivery',
-    up: true,
-    icon: Truck,
-    color: 'stat-purple',
-  },
-  {
-    key: 'completed',
-    label: 'Completed Tasks',
-    value: 12,
-    sub: 'Delivered today',
-    up: true,
-    icon: CheckCircle2,
-    color: 'stat-green',
-  },
-]
-
-const PROGRESS = {
-  completed: 10,
-  inTransit: 5,
-  pending: 2,
-}
-const TOTAL_PROGRESS = PROGRESS.completed + PROGRESS.inTransit + PROGRESS.pending
-const PROGRESS_PCT = Math.round((PROGRESS.completed / TOTAL_PROGRESS) * 100)
-
-// Earnings sparkline data (last 7 days)
-const EARNINGS_DATA = [820, 1100, 950, 1400, 1200, 1650, 1850]
-const EARNINGS_TODAY = 1850
-const EARNINGS_YESTERDAY = 1650
-
-// Upcoming tasks table
-const UPCOMING_TASKS = [
-  { id: 'ORD-4821', name: 'Neeraj Tiwari',   type: 'Pickup',   time: '9:30 AM',  pickup: 'Sector 18, Noida',      status: 'Pending'    },
-  { id: 'ORD-4822', name: 'Priya Mehta',     type: 'Delivery', time: '10:00 AM', pickup: 'Connaught Place',        status: 'In Transit' },
-  { id: 'ORD-4823', name: 'Amit Singh',      type: 'Pickup',   time: '10:45 AM', pickup: 'Karol Bagh',             status: 'Picked'     },
-  { id: 'ORD-4824', name: 'Sneha Kapoor',    type: 'Delivery', time: '11:30 AM', pickup: 'Janakpuri',              status: 'Delivered'  },
-  { id: 'ORD-4825', name: 'Rahul Gupta',     type: 'Pickup',   time: '12:15 PM', pickup: 'Greater Kailash',        status: 'Pending'    },
-]
-
-// Live location marker (dummy coords — Delhi)
-const LIVE_LOCATION = { lat: 28.6139, lng: 77.2090, label: 'Connaught Place, Delhi' }
-
-/* ─────────────────────────────────────────
-   ANIMATED COUNTER
-───────────────────────────────────────── */
-function Counter({ value }) {
-  const [display, setDisplay] = useState(0)
-  useEffect(() => {
-    let cur = 0
-    const step = Math.max(1, Math.ceil(value / 25))
-    const t = setInterval(() => {
-      cur += step
-      if (cur >= value) { setDisplay(value); clearInterval(t) }
-      else setDisplay(cur)
-    }, 40)
-    return () => clearInterval(t)
-  }, [value])
-  return <>{display}</>
-}
-
-/* ─────────────────────────────────────────
-   DONUT CHART (SVG)
-───────────────────────────────────────── */
-function DonutChart({ pct }) {
-  const r = 52
-  const circ = 2 * Math.PI * r
-  const dash = (pct / 100) * circ
-
+function StatusPill({ status }) {
+  const cfg = STATUS_CONFIG[status] ?? { label: status, color: "#475569", bg: "#f1f5f9", border: "#cbd5e1" };
   return (
-    <svg width="140" height="140" viewBox="0 0 140 140" className="donut-svg">
-      {/* track */}
-      <circle cx="70" cy="70" r={r} fill="none" stroke="#f1f5f9" strokeWidth="14" />
-      {/* inTransit arc */}
-      <circle
-        cx="70" cy="70" r={r} fill="none"
-        stroke="#f97316" strokeWidth="14"
-        strokeDasharray={`${((PROGRESS.inTransit / TOTAL_PROGRESS) * circ).toFixed(2)} ${circ}`}
-        strokeDashoffset={-(((PROGRESS.completed / TOTAL_PROGRESS) * circ)).toFixed(2)}
-        strokeLinecap="round"
-        style={{ transform: 'rotate(-90deg)', transformOrigin: '70px 70px', transition: 'stroke-dasharray 1s ease' }}
-      />
-      {/* completed arc */}
-      <circle
-        cx="70" cy="70" r={r} fill="none"
-        stroke="#3b82f6" strokeWidth="14"
-        strokeDasharray={`${((PROGRESS.completed / TOTAL_PROGRESS) * circ).toFixed(2)} ${circ}`}
-        strokeDashoffset="0"
-        strokeLinecap="round"
-        style={{ transform: 'rotate(-90deg)', transformOrigin: '70px 70px', transition: 'stroke-dasharray 1s ease' }}
-      />
-      {/* center text */}
-      <text x="70" y="64" textAnchor="middle" className="donut-pct-text">{pct}%</text>
-      <text x="70" y="80" textAnchor="middle" className="donut-sub-text">Completed</text>
-    </svg>
-  )
+    <span style={{
+      padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700,
+      background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+      display: "inline-block",
+    }}>
+      {cfg.label}
+    </span>
+  );
 }
 
-/* ─────────────────────────────────────────
-   SPARKLINE CHART (SVG)
-───────────────────────────────────────── */
-function Sparkline({ data }) {
-  const W = 200, H = 60
-  const max = Math.max(...data)
-  const min = Math.min(...data)
-  const range = max - min || 1
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * W
-    const y = H - ((v - min) / range) * (H - 8) - 4
-    return `${x},${y}`
-  })
-  const pathD = `M${pts.join(' L')}`
-  const areaD = `M${pts[0]} L${pts.join(' L')} L${W},${H} L0,${H} Z`
-
+function TaskCard({ task, onClick }) {
+  const isPickup = task.taskType === "pickup";
   return (
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="sparkline-svg" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={areaD} fill="url(#spark-grad)" />
-      <path d={pathD} fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-/* ─────────────────────────────────────────
-   MAP PLACEHOLDER (shows OSM iframe)
-───────────────────────────────────────── */
-function LiveMap() {
-  return (
-    <div className="map-wrap">
-      <iframe
-        title="Live Location"
-        src="https://www.openstreetmap.org/export/embed.html?bbox=77.18,28.59,77.24,28.64&layer=mapnik&marker=28.6139,77.2090"
-        className="map-iframe"
-        loading="lazy"
-      />
-      <div className="map-pin-label">
-        <MapPin size={14} />
-        <span>{LIVE_LOCATION.label}</span>
-      </div>
-    </div>
-  )
-}
-
-/* ─────────────────────────────────────────
-   STATUS BADGE
-───────────────────────────────────────── */
-function StatusBadge({ status }) {
-  const cls = {
-    'Pending':    'badge-pending',
-    'In Transit': 'badge-transit',
-    'Picked':     'badge-picked',
-    'Delivered':  'badge-delivered',
-    'Cancelled':  'badge-cancelled',
-  }
-  return <span className={`db-badge ${cls[status] || ''}`}>{status}</span>
-}
-
-/* ─────────────────────────────────────────
-   DASHBOARD PAGE
-───────────────────────────────────────── */
-export default function Dashboard() {
-  const earningsDiff = EARNINGS_TODAY - EARNINGS_YESTERDAY
-  const earningsUp = earningsDiff >= 0
-  const agent = getAgentGreeting()
-
-  return (
-    <div className="db-root">
-
-      {/* ── GREETING (below top header) ── */}
-      <div className="db-header">
-        <div className="db-greeting-block">
-          <h2 className="db-greeting">
-            Good Morning, {agent.first} <span className="db-wave" aria-hidden>👋</span>
-          </h2>
-          <p className="db-subgreeting">Ready to deliver excellence today!</p>
+    <div onClick={onClick} style={{
+      background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16,
+      padding: "16px 18px", cursor: "pointer", transition: "all .15s",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+    }}
+    onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"}
+    onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)"}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{
+            width: 32, height: 32,
+            background: isPickup ? "#f5f3ff" : "#ecfdf5",
+            borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            {isPickup ? <Package size={16} color="#7c3aed" /> : <Truck size={16} color="#059669" />}
+          </div>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", margin: 0 }}>
+              {task.order?.orderNumber}
+            </p>
+            <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>
+              {isPickup ? "↑ Pickup" : "↓ Delivery"}
+            </p>
+          </div>
         </div>
-        <button type="button" className="db-datePicker" aria-label="Selected date">
-          <span>{TODAY}</span>
-          <ChevronDown size={16} className="db-dateChevron" aria-hidden />
+        <StatusPill status={task.status} />
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
+          <Phone size={11} color="#94a3b8" />
+          <span>{task.order?.customer?.name} · {task.order?.customer?.phone}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12, color: "#64748b" }}>
+          <MapPin size={11} color="#94a3b8" style={{ marginTop: 1, flexShrink: 0 }} />
+          <span style={{ lineHeight: 1.4 }}>{task.order?.customer?.address}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#64748b" }}>
+          <Package size={11} color="#94a3b8" />
+          <span>{task.order?.deviceDetails?.brand} {task.order?.deviceDetails?.model}</span>
+        </div>
+      </div>
+
+      {task.scheduledTime && (
+        <div style={{
+          marginTop: 10, paddingTop: 10, borderTop: "1px solid #f1f5f9",
+          display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#94a3b8",
+        }}>
+          <Calendar size={11} />
+          Scheduled: {new Date(task.scheduledTime).toLocaleString("en-IN")}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const user = (() => { try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; } })();
+
+  const [stats, setStats] = useState(null);
+  const [activeTasks, setActiveTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [s, tasks] = await Promise.all([getMyStats(), getMyTasks()]);
+      setStats(s);
+      setActiveTasks(tasks.filter(t => ["pending", "accepted", "in_progress"].includes(t.status)));
+    } catch (err) {
+      console.error(err);
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const greeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+  };
+
+  return (
+    <div style={{ padding: "24px 20px", maxWidth: 900, margin: "0 auto" }}>
+
+      {/* Header banner */}
+      <div style={{
+        background: "linear-gradient(135deg, #ea580c 0%, #f97316 100%)",
+        borderRadius: 18, padding: "20px 24px", marginBottom: 24,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        flexWrap: "wrap", gap: 12,
+      }}>
+        <div>
+          <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, margin: 0 }}>{greeting()}</p>
+          <h1 style={{ color: "#fff", fontSize: 20, fontWeight: 800, margin: "4px 0 2px" }}>{user.name ?? "Agent"}</h1>
+          <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 12, margin: 0 }}>
+            {stats?.active ?? 0} active task{stats?.active !== 1 ? "s" : ""} · {stats?.completedToday ?? 0} completed today
+          </p>
+        </div>
+        <button onClick={load} style={{
+          background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.3)",
+          borderRadius: 10, padding: "8px 14px", color: "#fff", fontSize: 13,
+          fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+        }}>
+          <RefreshCw size={14} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
+          Refresh
         </button>
       </div>
 
-      {/* ── STAT CARDS ── */}
-      <div className="db-stats-row">
-        {STATS.map((s) => {
-          const Icon = s.icon
+      {/* Stats grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginBottom: 24 }}>
+        {[
+          { label: "Total Tasks",      value: stats?.total     ?? 0, icon: Clock,        color: "#7c3aed", bg: "#f5f3ff" },
+          { label: "Active",           value: stats?.active    ?? 0, icon: Truck,        color: "#c2410c", bg: "#fff7ed" },
+          { label: "Completed",        value: stats?.completed ?? 0, icon: CheckCircle,  color: "#15803d", bg: "#f0fdf4" },
+          { label: "Failed",           value: stats?.failed    ?? 0, icon: XCircle,      color: "#b91c1c", bg: "#fef2f2" },
+          { label: "Pickup Tasks",     value: stats?.pickup    ?? 0, icon: Package,      color: "#1d4ed8", bg: "#eff6ff" },
+          { label: "Delivery Tasks",   value: stats?.delivery  ?? 0, icon: TrendingUp,   color: "#0e7490", bg: "#ecfeff" },
+        ].map(s => {
+          const Icon = s.icon;
           return (
-            <div key={s.key} className={`db-stat-card ${s.color}`}>
-              <div className="db-stat-top">
-                <div className="db-stat-icon-wrap">
-                  <Icon size={22} className="db-stat-icon" />
-                </div>
-                <div className={`db-stat-trend ${s.up ? 'trend-up' : 'trend-down'}`}>
-                  {s.up ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                </div>
+            <div key={s.label} style={{
+              background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14,
+              padding: "14px 16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            }}>
+              <div style={{ width: 36, height: 36, background: s.bg, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+                <Icon size={17} color={s.color} />
               </div>
-              <p className="db-stat-value"><Counter value={s.value} /></p>
-              <p className="db-stat-label">{s.label}</p>
-              <p className="db-stat-sub">{s.sub}</p>
+              <p style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", margin: 0 }}>{loading ? "—" : s.value}</p>
+              <p style={{ fontSize: 11, color: "#64748b", marginTop: 3 }}>{s.label}</p>
             </div>
-          )
+          );
         })}
       </div>
 
-      {/* ── MIDDLE ROW: Progress + Earnings + Map ── */}
-      <div className="db-mid-row">
-
-        {/* Today's Progress */}
-        <div className="db-card db-progress-card">
-          <div className="db-card-header">
-            <h3 className="db-card-title">Today's Progress</h3>
+      {/* Active tasks */}
+      <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", margin: 0 }}>Active Tasks</h2>
+            <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 3 }}>{activeTasks.length} tasks require your attention</p>
           </div>
-          <div className="db-progress-body">
-            <DonutChart pct={PROGRESS_PCT} />
-            <div className="db-progress-legend">
-              <div className="db-legend-item">
-                <span className="db-legend-dot dot-blue" />
-                <span className="db-legend-label">Completed</span>
-                <span className="db-legend-val">{PROGRESS.completed}</span>
-              </div>
-              <div className="db-legend-item">
-                <span className="db-legend-dot dot-orange" />
-                <span className="db-legend-label">In Transit</span>
-                <span className="db-legend-val">{PROGRESS.inTransit}</span>
-              </div>
-              <div className="db-legend-item">
-                <span className="db-legend-dot dot-gray" />
-                <span className="db-legend-label">Pending</span>
-                <span className="db-legend-val">{PROGRESS.pending}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Earnings Today */}
-        <div className="db-card db-earnings-card">
-          <div className="db-card-header">
-            <h3 className="db-card-title">Earnings Today</h3>
-          </div>
-          <div className="db-earnings-amount">
-            <IndianRupee size={20} className="db-rupee-icon" />
-            <span className="db-earnings-value">{EARNINGS_TODAY.toLocaleString('en-IN')}</span>
-          </div>
-          <div className={`db-earnings-diff ${earningsUp ? 'diff-up' : 'diff-down'}`}>
-            {earningsUp ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-            <span>₹{Math.abs(earningsDiff).toLocaleString('en-IN')} vs yesterday</span>
-          </div>
-          <div className="db-sparkline-wrap">
-            <Sparkline data={EARNINGS_DATA} />
-          </div>
-          <div className="db-sparkline-labels">
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-              <span key={i} className="db-spark-day">{d}</span>
-            ))}
-          </div>
-        </div>
-
-        {/* Live Location */}
-        <div className="db-card db-map-card">
-          <div className="db-card-header">
-            <h3 className="db-card-title">Live Location</h3>
-            <span className="db-live-badge">
-              <span className="db-live-dot" />
-              LIVE
-            </span>
-          </div>
-          <LiveMap />
-        </div>
-
-      </div>
-
-      {/* ── UPCOMING TASKS ── */}
-      <div className="db-card db-tasks-card">
-        <div className="db-card-header">
-          <h3 className="db-card-title">Upcoming Tasks</h3>
-          <button type="button" className="db-view-all">
-            View All <ChevronRight size={15} />
+          <button onClick={() => navigate("/tasks")} style={{
+            display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600,
+            color: "#f97316", background: "#fff7ed", border: "1px solid #fed7aa",
+            borderRadius: 8, padding: "6px 12px", cursor: "pointer",
+          }}>
+            View all <ArrowRight size={13} />
           </button>
         </div>
-        <div className="db-table-wrap">
-          <table className="db-table">
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Time</th>
-                <th>Pickup Location</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {UPCOMING_TASKS.map((t) => (
-                <tr key={t.id} className="db-task-row">
-                  <td><span className="db-order-id">{t.id}</span></td>
-                  <td className="db-name">{t.name}</td>
-                  <td>
-                    <span className={`db-type-badge ${t.type === 'Pickup' ? 'type-pickup' : 'type-delivery'}`}>
-                      {t.type === 'Pickup' ? <PackageSearch size={11} /> : <Truck size={11} />}
-                      {t.type}
-                    </span>
-                  </td>
-                  <td className="db-time">{t.time}</td>
-                  <td className="db-pickup-addr">
-                    <MapPin size={12} className="db-addr-pin" />
-                    {t.pickup}
-                  </td>
-                  <td><StatusBadge status={t.status} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+
+        {loading ? (
+          <div style={{ padding: "48px 0", textAlign: "center", color: "#94a3b8" }}>
+            <RefreshCw size={20} style={{ animation: "spin 1s linear infinite", marginBottom: 8 }} />
+            <p style={{ fontSize: 13 }}>Loading tasks...</p>
+          </div>
+        ) : activeTasks.length === 0 ? (
+          <div style={{ padding: "48px 0", textAlign: "center", color: "#94a3b8" }}>
+            <Truck size={36} style={{ opacity: 0.3, marginBottom: 10 }} />
+            <p style={{ fontSize: 14, fontWeight: 600, color: "#475569" }}>No active tasks</p>
+            <p style={{ fontSize: 12, marginTop: 4 }}>All caught up! Check back later.</p>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14, padding: 16 }}>
+            {activeTasks.slice(0, 6).map(task => (
+              <TaskCard key={task._id} task={task} onClick={() => navigate("/tasks")} />
+            ))}
+          </div>
+        )}
       </div>
 
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
-  )
+  );
 }

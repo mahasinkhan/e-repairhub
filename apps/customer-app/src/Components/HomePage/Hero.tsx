@@ -1,178 +1,314 @@
-import React, { useEffect, useRef } from "react";
-import "./Hero.css";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
-  FiAward,
-  FiCheckCircle,
-  FiClock,
-  FiPlayCircle,
+  FiSmartphone,
+  FiBatteryCharging,
+  FiCamera,
   FiShield,
-  FiStar,
-  FiTruck,
-  FiUserCheck,
+  FiSquare,
+  FiPower,
+  FiArrowRight,
 } from "react-icons/fi";
+import "./QuickQuote.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const trustItems = [
-  { icon: <FiStar />, title: "4.9 Rating", subtitle: "12K+ Reviews" },
-  { icon: <FiClock />, title: "Same Day Repair", subtitle: "Express Service" },
-  { icon: <FiShield />, title: "6 Month Warranty", subtitle: "On All Repairs" },
-  { icon: <FiCheckCircle />, title: "Secure & Safe", subtitle: "100% Protected" },
+type BrandTier = "premium" | "standard" | "budget";
+
+type BrandOption = {
+  id: string;
+  name: string;
+  tier: BrandTier;
+};
+
+type ServiceOption = {
+  id: string;
+  name: string;
+  Icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  basePrice: number;
+};
+
+const BRANDS: BrandOption[] = [
+  { id: "apple",    name: "Apple",    tier: "premium"  },
+  { id: "samsung",  name: "Samsung",  tier: "premium"  },
+  { id: "oneplus",  name: "OnePlus",  tier: "standard" },
+  { id: "google",   name: "Google",   tier: "standard" },
+  { id: "xiaomi",   name: "Xiaomi",   tier: "budget"   },
+  { id: "realme",   name: "Realme",   tier: "budget"   },
+  { id: "vivo",     name: "Vivo",     tier: "budget"   },
+  { id: "oppo",     name: "Oppo",     tier: "budget"   },
+  { id: "motorola", name: "Motorola", tier: "budget"   },
+  { id: "nothing",  name: "Nothing",  tier: "standard" },
 ];
 
-const featureCards = [
-  { icon: <FiTruck />, title: "Free Pickup", subtitle: "& Delivery" },
-  { icon: <FiShield />, title: "Genuine Parts", subtitle: "Assured" },
-  { icon: <FiUserCheck />, title: "Certified", subtitle: "Technicians" },
+const SERVICES: ServiceOption[] = [
+  { id: "glass",    name: "Screen Glass",   Icon: FiSquare,          basePrice: 499  },
+  { id: "display",  name: "Display",        Icon: FiSmartphone,      basePrice: 1499 },
+  { id: "battery",  name: "Battery",        Icon: FiBatteryCharging, basePrice: 699  },
+  { id: "charging", name: "Charging Port",  Icon: FiPower,           basePrice: 499  },
+  { id: "camera",   name: "Camera",         Icon: FiCamera,          basePrice: 399  },
+  { id: "cover",    name: "Mobile Cover",   Icon: FiShield,          basePrice: 299  },
 ];
 
-const Hero3D = () => {
-  const heroRef = useRef<HTMLElement | null>(null);
+const TIER_MULT: Record<BrandTier, number> = {
+  premium:  1.35,
+  standard: 1.15,
+  budget:   1.0,
+};
+
+function formatINR(value: number) {
+  return `₹${Math.round(value).toLocaleString("en-IN")}`;
+}
+
+const MODELS_BY_BRAND: Record<string, string[]> = {
+  apple:    ["iPhone 11", "iPhone 12", "iPhone 13", "iPhone 14", "iPhone 15", "iPhone 15 Pro"],
+  samsung:  ["Galaxy S21", "Galaxy S22", "Galaxy S23", "Galaxy S24", "Galaxy A54", "Galaxy M34"],
+  oneplus:  ["OnePlus 9", "OnePlus 10", "OnePlus 11", "OnePlus 12", "Nord 3", "Nord CE 4"],
+  google:   ["Pixel 6", "Pixel 7", "Pixel 8", "Pixel 8 Pro", "Pixel 9"],
+  xiaomi:   ["Redmi Note 12", "Redmi Note 13", "Mi 11X", "Xiaomi 13", "Xiaomi 14"],
+  realme:   ["Realme 10", "Realme 11", "Realme 12", "Narzo 60", "Narzo 70"],
+  vivo:     ["Vivo V27", "Vivo V29", "Vivo V30", "Vivo T2", "Vivo T3"],
+  oppo:     ["Oppo F21", "Oppo F23", "Oppo F25", "Reno 8", "Reno 11"],
+  motorola: ["Moto G54", "Moto G64", "Moto Edge 40", "Moto Edge 50"],
+  nothing:  ["Nothing Phone (1)", "Nothing Phone (2)", "Nothing Phone (2a)"],
+};
+
+export default function QuickQuote() {
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const [brandId,   setBrandId]   = useState<string>("");
+  const [serviceId, setServiceId] = useState<string>("");
+  const [model,     setModel]     = useState<string>("");
+
+  const selectedBrand = useMemo(
+    () => BRANDS.find((b) => b.id === brandId) ?? null,
+    [brandId]
+  );
+  const selectedService = useMemo(
+    () => SERVICES.find((s) => s.id === serviceId) ?? null,
+    [serviceId]
+  );
+
+  const step = useMemo(() => {
+    if (!brandId)   return "brand"   as const;
+    if (!serviceId) return "service" as const;
+    if (!model)     return "model"   as const;
+    return "price" as const;
+  }, [brandId, serviceId, model]);
+
+  const estimate = useMemo(() => {
+    if (!selectedBrand || !selectedService || !model) return null;
+    const mult      = TIER_MULT[selectedBrand.tier];
+    const modelMult = /ultra|max|pro/i.test(model) ? 1.18 : /plus/i.test(model) ? 1.1 : 1.0;
+    const base      = selectedService.basePrice * mult * modelMult;
+    return { low: base * 0.95, high: base * 1.1 };
+  }, [selectedBrand, selectedService, model]);
+
+  // Build the booking URL with pre-filled params
+  const bookingUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (selectedBrand)   params.set("brand",   selectedBrand.name);
+    if (selectedService) params.set("service", selectedService.name);
+    if (model)           params.set("model",   model);
+    return `/book?${params.toString()}`;
+  }, [selectedBrand, selectedService, model]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.set(".hero-eyebrow", { opacity: 0, y: -20 });
-      gsap.set(".word", { y: "110%" });
-      gsap.set(".hero-para", { opacity: 0, y: 30 });
-      gsap.set(".hero-buttons", { opacity: 0, y: 24 });
-      gsap.set(".trust-row", { opacity: 0, y: 20 });
-      gsap.set(".hero-visual", { opacity: 0, x: 60 });
-      gsap.set(".hero-feature-card", { opacity: 0, x: 28 });
-      gsap.set(".hero-rating-card", { opacity: 0, scale: 0.9 });
+      gsap.set(".qq-header",      { opacity: 0, y: -50 });
+      gsap.set(".qq-eyebrow",     { opacity: 0, scaleX: 0 });
+      gsap.set(".qq-title",       { opacity: 0, y: 40 });
+      gsap.set(".qq-sub",         { opacity: 0, y: 20 });
+      gsap.set(".qq-shell__left", { opacity: 0, x: -80 });
+      gsap.set(".qq-shell__right",{ opacity: 0, x: 80 });
+      gsap.set(".qq-sum",         { opacity: 0, x: -30 });
+      gsap.set(".qq-bg",          { scaleX: 0, transformOrigin: "left center" });
 
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-
-      tl.to(".hero-eyebrow", { opacity: 1, y: 0, duration: 0.55 }, 0.2)
-        .to(".word", { y: "0%", duration: 0.7, stagger: 0.07, ease: "power4.out" }, 0.4)
-        .to(".hero-para", { opacity: 1, y: 0, duration: 0.6 }, 0.85)
-        .to(".hero-buttons", { opacity: 1, y: 0, duration: 0.5 }, 1.05)
-        .to(".trust-row", { opacity: 1, y: 0, duration: 0.45 }, 1.2)
-        .to(".hero-visual", { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }, 0.65)
-        .to(".hero-feature-card", { opacity: 1, x: 0, duration: 0.42, stagger: 0.12 }, 1.05)
-        .to(".hero-rating-card", { opacity: 1, scale: 1, duration: 0.42 }, 1.35);
-
-      gsap.to(".hero-phone-wrap", {
-        y: -10,
-        duration: 2.6,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-        delay: 1.5,
+      const tl = gsap.timeline({
+        scrollTrigger: { trigger: sectionRef.current, start: "top 78%", once: true },
       });
 
-      gsap.to(".hero-left", {
-        y: 40,
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".hero3d",
-          start: "top top",
-          end: "bottom top",
-          scrub: 1.2,
-        },
+      tl.to(".qq-bg",          { scaleX: 1, duration: 0.7, ease: "power3.inOut" })
+        .to(".qq-header",      { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" },    "-=0.45")
+        .to(".qq-eyebrow",     { opacity: 1, scaleX: 1, duration: 0.45, ease: "back.out(2)" }, "-=0.3")
+        .to(".qq-title",       { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },     "-=0.2")
+        .to(".qq-sub",         { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },     "-=0.35")
+        .to(".qq-shell__left", { opacity: 1, x: 0, duration: 0.65, ease: "power3.out" },    "-=0.2")
+        .to(".qq-shell__right",{ opacity: 1, x: 0, duration: 0.65, ease: "power3.out" },    "<")
+        .to(".qq-sum",         { opacity: 1, x: 0, duration: 0.4, ease: "back.out(1.4)", stagger: 0.1 }, "-=0.3");
+
+      document.querySelectorAll(".qq-sum").forEach((el) => {
+        el.addEventListener("mouseenter", () => gsap.to(el, { x: 5, duration: 0.2, ease: "power2.out" }));
+        el.addEventListener("mouseleave", () => gsap.to(el, { x: 0, duration: 0.2, ease: "power2.out" }));
       });
 
-      gsap.to(".hero-visual", {
-        y: -50,
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".hero3d",
-          start: "top top",
-          end: "bottom top",
-          scrub: 1.5,
-        },
+      const observer = new MutationObserver(() => {
+        document.querySelectorAll(".qq-panel").forEach((panel) => {
+          if (!panel.classList.contains("is-on")) gsap.set(panel, { clearProps: "opacity,transform" });
+        });
+        const activePanel = document.querySelector(".qq-panel.is-on");
+        if (activePanel) {
+          gsap.fromTo(activePanel,
+            { opacity: 0, y: 22, scale: 0.97 },
+            { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "power3.out", overwrite: "auto" }
+          );
+          const pills = activePanel.querySelectorAll(".qq-pill, .qq-svc");
+          if (pills.length) {
+            gsap.fromTo(pills,
+              { opacity: 0, y: 14 },
+              { opacity: 1, y: 0, duration: 0.3, ease: "power2.out", stagger: 0.045 }
+            );
+          }
+        }
       });
-    }, heroRef);
+
+      const shell = document.querySelector(".qq-shell__right");
+      if (shell) observer.observe(shell, { subtree: true, attributes: true, attributeFilter: ["class"] });
+
+      const priceObserver = new MutationObserver(() => {
+        const pricePanel = document.querySelector(".qq-panel.is-on");
+        if (pricePanel?.querySelector(".qq-priceCard")) {
+          gsap.fromTo(".qq-price",      { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(2)", delay: 0.2 });
+          gsap.fromTo(".qq-result-row", { opacity: 0, x: -16 },     { opacity: 1, x: 0, duration: 0.35, ease: "power2.out", stagger: 0.08, delay: 0.35 });
+          gsap.fromTo(".qq-cta",        { opacity: 0, y: 16 },       { opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.5)", delay: 0.65 });
+        }
+      });
+      if (shell) priceObserver.observe(shell, { subtree: true, attributes: true, attributeFilter: ["class"] });
+
+      return () => { observer.disconnect(); priceObserver.disconnect(); };
+    }, sectionRef);
 
     return () => ctx.revert();
   }, []);
 
   return (
-    <section className="hero3d" ref={heroRef}>
-      <div className="hero-left">
-        <div className="hero-eyebrow">
-          <FiAward />
-          India's Most Trusted Repair Service
-        </div>
+    <section className="qq" ref={sectionRef}>
+      <div className="qq-bg" aria-hidden />
 
-        <h2>
-          {["Premium", "Smartphone"].map((word) => (
-            <span className="word-wrap" key={word}>
-              <span className="word">{word} </span>
-            </span>
-          ))}
-          <br />
-          <span className="highlight">
-            {["Repair", "At", "Your", "Doorstep"].map((word) => (
-              <span className="word-wrap" key={word}>
-                <span className="word">{word} </span>
-              </span>
-            ))}
-          </span>
+      <div className="qq-header">
+        <h2 className="qq-title">
+          Select your <em>Brand</em>, <em>Model</em> &amp; <em>Service</em>
         </h2>
-
-        <p className="hero-para">
-          Book a repair in seconds. Our certified experts will pick up your device,
-          repair it with genuine parts and deliver it back safe, fast and hassle free.
-        </p>
-
-        <div className="hero-buttons">
-          <button className="btn-primary">
-            Book a Repair <span>→</span>
-          </button>
-          <button className="btn-secondary">
-            <FiPlayCircle />
-            How It Works
-          </button>
-        </div>
-
-        <div className="trust-row">
-          {trustItems.map((item) => (
-            <div className="trust-item" key={item.title}>
-              <span className="trust-icon">{item.icon}</span>
-              <span>
-                <strong>{item.title}</strong>
-                <small>{item.subtitle}</small>
-              </span>
-            </div>
-          ))}
-        </div>
       </div>
 
-      <div className="hero-visual" aria-hidden="true">
-        <div className="hero-phone-wrap">
-          <div className="phone-orbit" />
-          <div className="phone-device">
-            <div className="phone-notch" />
-            <div className="phone-screen">
-              <div className="phone-glow phone-glow-one" />
-              <div className="phone-glow phone-glow-two" />
-              <div className="phone-mark">ER</div>
+      <div className="qq-shell">
+        {/* ── Left: selection summary ── */}
+        <div className={`qq-shell__left ${brandId ? "is-filled" : ""}`}>
+          <p className="qq-shell__title">Your selection</p>
+
+          <button type="button" className={`qq-sum ${brandId ? "is-on" : ""}`}
+            onClick={() => { setBrandId(""); setServiceId(""); setModel(""); }}>
+            <span className="qq-sum__k">Brand</span>
+            <span className="qq-sum__v">{selectedBrand?.name ?? "Choose brand"}</span>
+          </button>
+
+          <button type="button" className={`qq-sum ${serviceId ? "is-on" : ""}`}
+            disabled={!brandId}
+            onClick={() => { setServiceId(""); setModel(""); }}
+            title={!brandId ? "Select brand first" : undefined}>
+            <span className="qq-sum__k">Service</span>
+            <span className="qq-sum__v">{selectedService?.name ?? "Choose service"}</span>
+          </button>
+
+          <button type="button" className={`qq-sum ${model ? "is-on" : ""}`}
+            disabled={!brandId || !serviceId}
+            onClick={() => setModel("")}
+            title={!brandId ? "Select brand first" : !serviceId ? "Select service first" : undefined}>
+            <span className="qq-sum__k">Model</span>
+            <span className="qq-sum__v">{model || "Choose model"}</span>
+          </button>
+        </div>
+
+        {/* ── Right: step panels ── */}
+        <div className={`qq-shell__right ${step === "price" ? "is-price" : ""}`}>
+
+          {/* Step 1 — Brand */}
+          <div className={`qq-panel ${step === "brand" ? "is-on" : ""}`}>
+            <h3 className="qq-panel__title">Choose Brand</h3>
+            <p className="qq-panel__sub">Pick a brand to continue.</p>
+            <div className="qq-pills" role="list">
+              {BRANDS.map((b) => (
+                <button key={b.id} type="button"
+                  className={`qq-pill${brandId === b.id ? " is-on" : ""}`}
+                  onClick={() => setBrandId(b.id)}>
+                  <span className="qq-pill-dot" aria-hidden />
+                  <span className="qq-pill-text">{b.name}</span>
+                </button>
+              ))}
             </div>
           </div>
-        </div>
 
-        <div className="hero-feature-stack">
-          {featureCards.map((card) => (
-            <div className="hero-feature-card" key={card.title}>
-              <span>{card.icon}</span>
-              <strong>
-                {card.title}
-                <small>{card.subtitle}</small>
-              </strong>
+          {/* Step 2 — Service */}
+          <div className={`qq-panel ${step === "service" ? "is-on" : ""}`}>
+            <h3 className="qq-panel__title">Choose Service</h3>
+            <p className="qq-panel__sub">Now select the repair service.</p>
+            <div className="qq-services" role="list">
+              {SERVICES.map((s) => (
+                <button key={s.id} type="button"
+                  className={`qq-svc${serviceId === s.id ? " is-on" : ""}`}
+                  onClick={() => setServiceId(s.id)}
+                  disabled={!brandId}
+                  title={!brandId ? "Select brand first" : undefined}>
+                  <span className="qq-svc-ico" aria-hidden><s.Icon /></span>
+                  <span className="qq-svc-text">{s.name}</span>
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
 
-        <div className="hero-rating-card">
-          <strong>4.9</strong>
-          <span>★★★★★</span>
-          <small>10K+ verified</small>
+          {/* Step 3 — Model */}
+          <div className={`qq-panel ${step === "model" ? "is-on" : ""}`}>
+            <h3 className="qq-panel__title">Choose Model</h3>
+            <p className="qq-panel__sub">Model selection refines estimate.</p>
+            <div className="qq-pills qq-pills--models" role="list">
+              {(MODELS_BY_BRAND[brandId] ?? []).map((m) => (
+                <button key={m} type="button"
+                  className={`qq-pill${model === m ? " is-on" : ""}`}
+                  onClick={() => setModel(m)}>
+                  <span className="qq-pill-text">{m}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Step 4 — Price + CTA */}
+          <div className={`qq-panel qq-panel--price ${step === "price" ? "is-on" : ""}`}>
+            <h3 className="qq-panel__title">Your Estimate</h3>
+            <p className="qq-panel__sub">Based on your selections.</p>
+            <div className="qq-priceCard">
+              <div className="qq-priceCard__top">
+                <span className="qq-price-eyebrow">Estimated Price</span>
+                <div className="qq-price">
+                  {estimate
+                    ? `${formatINR(estimate.low)} – ${formatINR(estimate.high)}`
+                    : "—"}
+                </div>
+              </div>
+              <div className="qq-priceCard__facts">
+                <div className="qq-result-row">
+                  <span className="qq-label">Brand</span>
+                  <span className="qq-value">{selectedBrand?.name}</span>
+                </div>
+                <div className="qq-result-row">
+                  <span className="qq-label">Service</span>
+                  <span className="qq-value">{selectedService?.name}</span>
+                </div>
+                <div className="qq-result-row">
+                  <span className="qq-label">Model</span>
+                  <span className="qq-value">{model}</span>
+                </div>
+              </div>
+
+              {/* ── CTA — navigates to /book with pre-filled params ── */}
+              
+               <a href={bookingUrl} className="qq-cta">
+  Continue to Booking <FiArrowRight aria-hidden />
+</a>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
   );
-};
-
-export default Hero3D;
+}

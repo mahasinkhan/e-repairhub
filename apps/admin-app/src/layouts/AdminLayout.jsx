@@ -9,7 +9,6 @@ function AdminLayoutShell() {
 
   return (
     <div className="flex h-[100dvh] max-h-[100dvh] overflow-hidden bg-slate-50 text-slate-900">
-      {/* Mobile overlay */}
       {sidebarOpen ? (
         <button
           type="button"
@@ -18,8 +17,6 @@ function AdminLayoutShell() {
           onClick={closeSidebar}
         />
       ) : null}
-
-      {/* Sidebar: full viewport height, does not scroll with page content */}
       <div
         className={[
           "z-50 flex h-[100dvh] max-h-[100dvh] w-64 shrink-0 transform transition-transform duration-200 ease-out",
@@ -29,8 +26,6 @@ function AdminLayoutShell() {
       >
         <Sidebar />
       </div>
-
-      {/* Main column: only this area scrolls */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:pl-0">
         <AdminHeader />
         <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-6 lg:p-8">

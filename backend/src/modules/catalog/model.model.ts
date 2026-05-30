@@ -19,6 +19,7 @@ const ModelSchema: Schema = new Schema({
   name: { type: String, required: true },
   brand: { type: Schema.Types.ObjectId, ref: 'Brand', required: true },
   deviceType: { type: String, required: true },
+  series: { type: String, default: "" },  // ADD THIS LINE
   image: { type: String },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
 }, { timestamps: true });

@@ -1,60 +1,34 @@
-# Dependencies
+﻿# Dependencies
 node_modules/
-
-# Environment & secrets (never commit)
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-**/.env
-!**/.env.example
+.pnp
+.pnp.js
 
 # Build outputs
 dist/
-dist-ssr/
 build/
 *.tsbuildinfo
 
-# Logs & debug
+# Environment files — NEVER commit these
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# Logs
 logs/
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-# Runtime / uploads
-uploads/
-tmp/
-temp/
-.cache/
-
-# Test & coverage
-coverage/
-.nyc_output/
-
-# OS
+# OS files
 .DS_Store
 Thumbs.db
-Desktop.ini
-nul
+
+# Vite
+.vite/
+
+# Uploads (local only)
+backend/uploads/
 
 # IDE
-.vscode/*
-!.vscode/extensions.json
+.vscode/
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Tooling
-.turbo/
-.vercel/
-.netlify/
-
-# Local overrides
-*.local
