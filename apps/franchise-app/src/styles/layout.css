@@ -21,9 +21,13 @@
   margin-left: var(--sidebar-w);
   padding-top: var(--navbar-height);
   min-height: 100vh;
+  overflow-x: clip;
+  position: relative;
+  z-index: 0;
   transition: margin-left var(--transition);
 }
 
 .layout-scroll {
   min-height: calc(100vh - var(--navbar-height));
+  overflow-x: clip;
 }

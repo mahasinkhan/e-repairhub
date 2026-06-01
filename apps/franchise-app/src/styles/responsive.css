@@ -1,0 +1,116 @@
+/* E-RepairHub Franchise - Responsive CSS */
+
+/* ← CHANGED: 'clip' instead of 'hidden' — prevents page scroll
+   but does NOT trap child scroll contexts like 'hidden' does */
+html, body { overflow-x: clip; width: 100%; }
+
+@media (max-width: 900px) {
+  .navbar__menu-btn { display: flex !important; }
+  .content-shell { padding: 1rem; }
+  .dash-stats { grid-template-columns: repeat(2, 1fr) !important; gap: 0.75rem; }
+  .dash-page { padding-bottom: 2rem; }
+  .content-shell .overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .sidebar {
+    transform: translateX(-100%);
+    width: var(--sidebar-expanded) !important;
+    box-shadow: none;
+    transition: transform var(--transition), box-shadow var(--transition);
+  }
+  .layout-root.mobile-open .sidebar {
+    transform: translateX(0);
+    box-shadow: 0 0 40px rgba(0,0,0,0.2);
+  }
+}
+
+@media (max-width: 1024px) {
+  .dash-mid { grid-template-columns: 1fr !important; }
+  .dash-mid__side { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .dash-bottom { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 640px) {
+  .content-shell { padding: 0.75rem; }
+  .dash-stats { grid-template-columns: 1fr !important; }
+  .dash-mid__side { grid-template-columns: 1fr !important; }
+  .dash-panel__head { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  .dash-seg { width: 100%; }
+  .dash-seg__btn { flex: 1; text-align: center; font-size: 0.75rem; padding: 0.4rem 0.25rem; }
+  .navbar { padding: 0 0.75rem; }
+  .content-shell .flex.items-center.justify-between { flex-wrap: wrap; gap: 10px; }
+  .content-shell h1 { font-size: 1.2rem !important; }
+}
+
+@media (max-width: 480px) {
+  .dash-performance__months { display: none; }
+  .dash-donut-row { flex-direction: column; align-items: flex-start; }
+  .dash-donut__legend { min-width: 0; width: 100%; }
+  .dash-panel { padding: 1rem !important; border-radius: 12px; }
+  .p-6 { padding: 0.75rem !important; }
+  .rounded-2xl { border-radius: 14px !important; }
+  .text-2xl { font-size: 1.2rem !important; }
+  .max-w-md { max-width: 100% !important; }
+}
+
+/* ===== DASHBOARD TABLE FIX ===== */
+.dash-table-wrap {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dash-table {
+  table-layout: auto !important;
+  min-width: 480px;
+  width: 100%;
+}
+
+.dash-table td,
+.dash-table th {
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
+}
+
+.dash-customer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.dash-customer__meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.dash-customer__name {
+  font-weight: 600;
+  font-size: 0.82rem;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  word-break: normal !important;
+  max-width: 160px;
+  display: block;
+}
+.dash-customer__email {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  word-break: normal !important;
+  max-width: 160px;
+  display: block;
+}
+.dash-table__mono {
+  white-space: nowrap !important;
+  word-break: normal !important;
+}
+
+/* ← CHANGED: 'clip' instead of 'hidden' on both layout containers */
+.layout-main  { overflow-x: clip; }
+.layout-scroll { overflow-x: clip; }
+html { overflow-y: scroll; }
+
+button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }

@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useCallback, useEffect, useState } from "react";
 import {
   Bell, ShoppingCart, Wrench, CheckCircle,
   XCircle, Package, RefreshCw, Check, Trash2,
   AlertCircle, Clock,
 } from "lucide-react";
 import { getMyStats } from "../services/franchise.api.js";
+
+const STORAGE_KEY = "erh_notifications_state";
 
 const TYPE_CONFIG = {
   new_order: { icon: ShoppingCart, color: "#1d4ed8", bg: "#eff6ff", label: "New Order"  },
@@ -17,72 +20,125 @@ const TYPE_CONFIG = {
 
 function buildNotifications(recentOrders = []) {
   const notifs = recentOrders.map((o, i) => {
-    const type = o.status === "placed" || o.status === "assigned" ? "new_order"
+    const type =
+      o.status === "placed" || o.status === "assigned" ? "new_order"
       : o.status === "repairing" ? "repairing"
       : o.status === "completed" ? "completed"
       : o.status === "cancelled" ? "cancelled"
       : o.status === "delivered" ? "delivered"
       : "system";
     return {
-      id: o._id || `n_${i}`, type,
-      title: type === "new_order" ? "New order assigned to you"
-           : type === "repairing" ? "Repair in progress"
-           : type === "completed" ? "Repair completed"
-           : type === "cancelled" ? "Order cancelled"
-           : type === "delivered" ? "Order delivered"
-           : "Order update",
+      id:      o._id || `n_${i}`,
+      type,
+      title:
+        type === "new_order" ? "New order assigned to you"
+        : type === "repairing" ? "Repair in progress"
+        : type === "completed" ? "Repair completed"
+        : type === "cancelled" ? "Order cancelled"
+        : type === "delivered" ? "Order delivered"
+        : "Order update",
       message: `${o.orderNumber} — ${o.customer?.name ?? "Customer"} · ${o.deviceDetails?.model ?? "Device"} · ₹${o.price ?? 0}`,
-      time: o.updatedAt || o.createdAt,
-      read: i > 1,
+      time:    o.updatedAt || o.createdAt,
       orderId: o._id,
     };
   });
   return [
     {
-      id: "sys_welcome", type: "system",
-      title: "Welcome to E-RepairHub Franchise Portal",
+      id:      "sys_welcome",
+      type:    "system",
+      title:   "Welcome to E-RepairHub Franchise Portal",
       message: "Your franchise panel is active. Manage orders, track repairs and view earnings.",
-      time: new Date(Date.now() - 7200000).toISOString(),
-      read: true,
+      time:    new Date(Date.now() - 7200000).toISOString(),
     },
     ...notifs,
   ];
 }
 
+// ── localStorage helpers ──────────────────────────────────────────────────────
+function loadSavedState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { dismissed: [], read: [] };
+  } catch {
+    return { dismissed: [], read: [] };
+  }
+}
+
+function saveState(dismissed, read) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ dismissed, read }));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 function timeAgo(time) {
   if (!time) return "—";
   const diff = Math.floor((Date.now() - new Date(time).getTime()) / 1000);
-  if (diff < 60) return "Just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 60)    return "Just now";
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return new Date(time).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
 }
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [filter,        setFilter]        = useState("all");
+  const [dismissed,     setDismissed]     = useState(() => loadSavedState().dismissed);
+  const [readIds,       setReadIds]        = useState(() => loadSavedState().read);
+  const [loading,       setLoading]        = useState(true);
+  const [filter,        setFilter]         = useState("all");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const stats = await getMyStats();
-      setNotifications(buildNotifications(stats.recentOrders ?? []));
+      const all   = buildNotifications(stats.recentOrders ?? []);
+      setNotifications(all);
     } catch {
       setNotifications(buildNotifications([]));
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+  const markRead = (id) => {
+    const newRead = [...new Set([...readIds, id])];
+    setReadIds(newRead);
+    saveState(dismissed, newRead);
   };
 
-  useEffect(() => { load(); }, []);
+  const markAllRead = () => {
+    const newRead = notifications.map(n => n.id);
+    setReadIds(newRead);
+    saveState(dismissed, newRead);
+  };
 
-  const markRead    = (id) => setNotifications(p => p.map(n => n.id === id ? { ...n, read: true } : n));
-  const markAllRead = ()   => setNotifications(p => p.map(n => ({ ...n, read: true })));
-  const remove      = (id) => setNotifications(p => p.filter(n => n.id !== id));
-  const clearAll    = ()   => { if (window.confirm("Clear all notifications?")) setNotifications([]); };
+  const remove = (id) => {
+    const newDismissed = [...new Set([...dismissed, id])];
+    setDismissed(newDismissed);
+    saveState(newDismissed, readIds);
+  };
 
-  const unread = notifications.filter(n => !n.read).length;
+  const clearAll = () => {
+    if (!window.confirm("Clear all notifications?")) return;
+    const allIds = notifications.map(n => n.id);
+    setDismissed(allIds);
+    saveState(allIds, readIds);
+  };
 
-  const filtered = notifications.filter(n => {
+  // ── Derived state ─────────────────────────────────────────────────────────
+  const visible = notifications
+    .filter(n => !dismissed.includes(n.id))
+    .map(n => ({ ...n, read: readIds.includes(n.id) }));
+
+  const unread = visible.filter(n => !n.read).length;
+
+  const filtered = visible.filter(n => {
     if (filter === "unread") return !n.read;
     if (filter === "orders") return n.type !== "system";
     if (filter === "system") return n.type === "system";
@@ -90,10 +146,10 @@ export default function Notifications() {
   });
 
   const FILTERS = [
-    { key: "all",    label: "All",    count: notifications.length },
+    { key: "all",    label: "All",    count: visible.length },
     { key: "unread", label: "Unread", count: unread },
-    { key: "orders", label: "Orders", count: notifications.filter(n => n.type !== "system").length },
-    { key: "system", label: "System", count: notifications.filter(n => n.type === "system").length },
+    { key: "orders", label: "Orders", count: visible.filter(n => n.type !== "system").length },
+    { key: "system", label: "System", count: visible.filter(n => n.type === "system").length },
   ];
 
   return (
@@ -124,7 +180,7 @@ export default function Notifications() {
                 <Check size={13} /> Mark all read
               </button>
             )}
-            {notifications.length > 0 && (
+            {visible.length > 0 && (
               <button onClick={clearAll}
                 className="flex items-center gap-1.5 px-3 py-2 bg-white border border-red-200 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 transition">
                 <Trash2 size={13} /> Clear all
@@ -152,7 +208,7 @@ export default function Notifications() {
           ))}
         </div>
 
-        {/* List */}
+        {/* Notifications list */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <RefreshCw className="w-5 h-5 animate-spin mb-3" />
@@ -173,9 +229,7 @@ export default function Notifications() {
               return (
                 <div key={notif.id}
                   className={`flex items-start gap-4 p-4 rounded-2xl border transition ${
-                    notif.read
-                      ? "bg-white border-slate-200"
-                      : "bg-blue-50 border-blue-200"
+                    notif.read ? "bg-white border-slate-200" : "bg-blue-50 border-blue-200"
                   }`}>
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ background: cfg.bg }}>
@@ -219,6 +273,7 @@ export default function Notifications() {
           </div>
         )}
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

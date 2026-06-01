@@ -205,16 +205,31 @@
   background: var(--color-bg);
 }
 
+/* CHANGED: was grid-template-rows: auto auto which broke into 2 rows,
+   making the navbar taller than --navbar-height and overlapping page content.
+   Now stays single row — icons shrink to fit 375px instead. */
 @media (max-width: 640px) {
   .navbar {
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
+    padding: 0 0.75rem;
+    gap: 0.25rem;
   }
-
-  .navbar__center {
-    grid-column: 1 / -1;
-    justify-self: start;
-    text-align: left;
-    padding-left: 0;
+  .navbar__page-title {
+    font-size: 0.88rem;
+  }
+  .navbar__icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+  .navbar__avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 0.7rem;
+  }
+  .navbar__avatar-btn {
+    padding: 0.15rem 0.35rem 0.15rem 0.15rem;
+    gap: 0.3rem;
+  }
+  .navbar__chevron {
+    display: none;
   }
 }

@@ -167,3 +167,5 @@ p {
 .btn-ghost:hover {
   background: var(--color-bg);
 }
+
+@import './responsive.css';
