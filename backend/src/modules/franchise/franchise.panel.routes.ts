@@ -6,6 +6,7 @@ import {
   getMyOrders,
   getMyOrderById,
   getMyEarnings,
+  getMyMonthlyStats,
   acceptOrder,
   rejectOrder,
   markReceived,
@@ -22,6 +23,7 @@ franchisePanelRouter.use(verifyToken, requireRoles("franchise", "admin"));
 
 franchisePanelRouter.get("/profile",         getMyProfile);
 franchisePanelRouter.get("/stats",           getMyStats);
+franchisePanelRouter.get("/monthly-stats",   getMyMonthlyStats);
 franchisePanelRouter.get("/orders",          getMyOrders);
 franchisePanelRouter.get("/orders/:id",      getMyOrderById);
 franchisePanelRouter.get("/earnings",        getMyEarnings);

@@ -23,7 +23,7 @@ async function sendSms(phone: string, body: string): Promise<void> {
 
   const digits = phone.replace(/\D/g, "");
   let normalized = phone;
-  if (digits.length === 10)                                normalized = `+91${digits}`;
+  if (digits.length === 10)                                 normalized = `+91${digits}`;
   else if (digits.length === 11 && digits.startsWith("0")) normalized = `+91${digits.slice(1)}`;
   else if (digits.length === 12 && digits.startsWith("91")) normalized = `+${digits}`;
 
@@ -36,6 +36,7 @@ async function sendSms(phone: string, body: string): Promise<void> {
   }
 }
 
+// ── Profile ───────────────────────────────────────────────────────────────────
 export async function getMyProfile(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -44,6 +45,7 @@ export async function getMyProfile(req: AuthedRequest, res: Response, next: Next
   } catch (e) { next(e); }
 }
 
+// ── Stats (with optional date range filter) ───────────────────────────────────
 export async function getMyStats(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -51,15 +53,26 @@ export async function getMyStats(req: AuthedRequest, res: Response, next: NextFu
 
     const fid = franchise._id;
 
+    // Build date range filter
+    const baseQuery: Record<string, unknown> = { assignedFranchise: fid };
+    const { from, to } = req.query;
+    if (from || to) {
+      const dateFilter: Record<string, Date> = {};
+      if (from) dateFilter.$gte = new Date(String(from));
+      if (to)   { const d = new Date(String(to)); d.setHours(23, 59, 59, 999); dateFilter.$lte = d; }
+      baseQuery.createdAt = dateFilter;
+    }
+
     const [statusCounts, revenueResult, recentOrders] = await Promise.all([
       Order.aggregate([
-        { $match: { assignedFranchise: fid } },
+        { $match: baseQuery },
         { $group: { _id: "$status", count: { $sum: 1 } } },
       ]),
       Order.aggregate([
-        { $match: { assignedFranchise: fid, paymentStatus: "paid" } },
+        { $match: { ...baseQuery, paymentStatus: "paid" } },
         { $group: { _id: null, total: { $sum: "$price" } } },
       ]),
+      // Recent orders always return latest 5 regardless of date filter
       Order.find({ assignedFranchise: fid })
         .populate("deliveryAgent", "name phone username")
         .sort({ createdAt: -1 })
@@ -78,11 +91,11 @@ export async function getMyStats(req: AuthedRequest, res: Response, next: NextFu
     ok(res, {
       franchise,
       totalOrders,
-      pendingOrders:    (counts["placed"] ?? 0) + (counts["assigned"] ?? 0),
-      inRepair:          counts["repairing"]  ?? 0,
-      completedOrders:   counts["completed"]  ?? 0,
-      deliveredOrders:   counts["delivered"]  ?? 0,
-      cancelledOrders:   counts["cancelled"]  ?? 0,
+      pendingOrders:   (counts["placed"] ?? 0) + (counts["assigned"] ?? 0),
+      inRepair:         counts["repairing"]  ?? 0,
+      completedOrders:  counts["completed"]  ?? 0,
+      deliveredOrders:  counts["delivered"]  ?? 0,
+      cancelledOrders:  counts["cancelled"]  ?? 0,
       totalRevenue,
       commission,
       commissionPercent,
@@ -91,6 +104,73 @@ export async function getMyStats(req: AuthedRequest, res: Response, next: NextFu
   } catch (e) { next(e); }
 }
 
+// ── Monthly stats for performance chart (last 12 months) ─────────────────────
+export async function getMyMonthlyStats(req: AuthedRequest, res: Response, next: NextFunction) {
+  try {
+    const franchise = await getFranchiseForUser(req.userId!);
+    if (!franchise) return fail(res, "No franchise linked", 404);
+
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
+    twelveMonthsAgo.setDate(1);
+    twelveMonthsAgo.setHours(0, 0, 0, 0);
+
+    const [repairAgg, earningsAgg] = await Promise.all([
+      Order.aggregate([
+        { $match: { assignedFranchise: franchise._id, createdAt: { $gte: twelveMonthsAgo } } },
+        { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
+      ]),
+      Order.aggregate([
+        {
+          $match: {
+            assignedFranchise: franchise._id,
+            paymentStatus: "paid",
+            status: { $in: ["completed", "delivered"] },
+            createdAt: { $gte: twelveMonthsAgo },
+          },
+        },
+        {
+          $group: {
+            _id:     { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+            revenue: { $sum: "$price" },
+            count:   { $sum: 1 },
+          },
+        },
+      ]),
+    ]);
+
+    const now    = new Date();
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+      return {
+        year:  d.getFullYear(),
+        month: d.getMonth() + 1,
+        label: d.toLocaleString("en", { month: "short" }),
+      };
+    });
+
+    const repairMap   = new Map(repairAgg.map(s   => [`${s._id.year}-${s._id.month}`, s.count]));
+    const earningsMap = new Map(earningsAgg.map(s => [`${s._id.year}-${s._id.month}`, s.revenue]));
+    const delivMap    = new Map(earningsAgg.map(s => [`${s._id.year}-${s._id.month}`, s.count]));
+    const commPct     = (franchise as any).commissionPercent ?? 0;
+
+    const series = months.map(m => {
+      const key     = `${m.year}-${m.month}`;
+      const revenue = earningsMap.get(key) ?? 0;
+      return {
+        label:      m.label,
+        repairs:    repairMap.get(key)   ?? 0,
+        revenue,
+        commission: Math.round((revenue * commPct) / 100),
+        deliveries: delivMap.get(key)    ?? 0,
+      };
+    });
+
+    ok(res, { series, labels: months.map(m => m.label) });
+  } catch (e) { next(e); }
+}
+
+// ── Orders ────────────────────────────────────────────────────────────────────
 export async function getMyOrders(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -123,6 +203,7 @@ export async function getMyOrders(req: AuthedRequest, res: Response, next: NextF
   } catch (e) { next(e); }
 }
 
+// ── Order by ID ───────────────────────────────────────────────────────────────
 export async function getMyOrderById(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -137,6 +218,7 @@ export async function getMyOrderById(req: AuthedRequest, res: Response, next: Ne
   } catch (e) { next(e); }
 }
 
+// ── Accept order ──────────────────────────────────────────────────────────────
 export async function acceptOrder(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -144,9 +226,8 @@ export async function acceptOrder(req: AuthedRequest, res: Response, next: NextF
 
     const order = await Order.findOne({ _id: req.params.id, assignedFranchise: franchise._id });
     if (!order) return fail(res, "Order not found", 404);
-    if (!["assigned", "placed"].includes(order.status)) {
+    if (!["assigned", "placed"].includes(order.status))
       return fail(res, `Order cannot be accepted at status: ${order.status}`);
-    }
 
     order.status = "confirmed";
     order.timeline.push({ status: "confirmed", by: "franchise", time: new Date() });
@@ -155,6 +236,7 @@ export async function acceptOrder(req: AuthedRequest, res: Response, next: NextF
   } catch (e) { next(e); }
 }
 
+// ── Reject order ──────────────────────────────────────────────────────────────
 export async function rejectOrder(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -167,7 +249,7 @@ export async function rejectOrder(req: AuthedRequest, res: Response, next: NextF
     if (!order) return fail(res, "Order not found", 404);
     if (order.status === "cancelled") return fail(res, "Order already cancelled");
 
-    order.status      = "cancelled";
+    order.status       = "cancelled";
     order.cancelReason = reason;
     order.timeline.push({ status: "cancelled", by: "franchise", time: new Date(), note: reason });
     await order.save();
@@ -175,6 +257,7 @@ export async function rejectOrder(req: AuthedRequest, res: Response, next: NextF
   } catch (e) { next(e); }
 }
 
+// ── Mark received ─────────────────────────────────────────────────────────────
 export async function markReceived(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -182,9 +265,8 @@ export async function markReceived(req: AuthedRequest, res: Response, next: Next
 
     const order = await Order.findOne({ _id: req.params.id, assignedFranchise: franchise._id });
     if (!order) return fail(res, "Order not found", 404);
-    if (!["confirmed", "assigned"].includes(order.status)) {
+    if (!["confirmed", "assigned"].includes(order.status))
       return fail(res, "Order must be confirmed before marking received");
-    }
 
     order.status = "picked";
     order.timeline.push({ status: "picked", by: "franchise", time: new Date() });
@@ -193,6 +275,7 @@ export async function markReceived(req: AuthedRequest, res: Response, next: Next
   } catch (e) { next(e); }
 }
 
+// ── Start repair ──────────────────────────────────────────────────────────────
 export async function startRepair(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -209,6 +292,7 @@ export async function startRepair(req: AuthedRequest, res: Response, next: NextF
   } catch (e) { next(e); }
 }
 
+// ── Complete repair ───────────────────────────────────────────────────────────
 export async function completeRepair(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -221,10 +305,8 @@ export async function completeRepair(req: AuthedRequest, res: Response, next: Ne
 
     order.status = "completed";
     if (notes?.trim()) order.notes = notes.trim();
-
-    if (Array.isArray(images) && images.length > 0) {
+    if (Array.isArray(images) && images.length > 0)
       order.images = images.filter((url: string) => typeof url === "string" && url.startsWith("http"));
-    }
 
     order.timeline.push({
       status: "completed",
@@ -237,6 +319,7 @@ export async function completeRepair(req: AuthedRequest, res: Response, next: Ne
   } catch (e) { next(e); }
 }
 
+// ── Earnings ──────────────────────────────────────────────────────────────────
 export async function getMyEarnings(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -261,20 +344,21 @@ export async function getMyEarnings(req: AuthedRequest, res: Response, next: Nex
       createdAt:     o.createdAt,
     }));
 
-    const totalRevenue    = orders.reduce((s, o) => s + o.price, 0);
+    const totalRevenue    = orders.reduce((s, o) => s + o.price,      0);
     const totalCommission = orders.reduce((s, o) => s + o.commission, 0);
 
     ok(res, {
-      franchise: { name: (franchise as any).name, commissionPercent },
+      franchise:       { name: (franchise as any).name, commissionPercent },
       commissionPercent,
       totalRevenue,
       totalCommission,
-      totalOrders: orders.length,
+      totalOrders:     orders.length,
       orders,
     });
   } catch (e) { next(e); }
 }
 
+// ── Delivery orders ───────────────────────────────────────────────────────────
 export async function getMyDeliveryOrders(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -303,6 +387,7 @@ export async function getMyDeliveryOrders(req: AuthedRequest, res: Response, nex
   } catch (e) { next(e); }
 }
 
+// ── Reject repair ─────────────────────────────────────────────────────────────
 export async function rejectRepair(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -313,9 +398,8 @@ export async function rejectRepair(req: AuthedRequest, res: Response, next: Next
 
     const order = await Order.findOne({ _id: req.params.id, assignedFranchise: franchise._id });
     if (!order) return fail(res, "Order not found", 404);
-    if (!["repairing", "picked"].includes(order.status)) {
+    if (!["repairing", "picked"].includes(order.status))
       return fail(res, "Order must be in repairing or picked state to reject repair");
-    }
 
     order.status       = "cancelled";
     order.cancelReason = `Repair rejected: ${reason.trim()}`;
@@ -324,13 +408,14 @@ export async function rejectRepair(req: AuthedRequest, res: Response, next: Next
 
     await sendSms(
       order.customer.phone,
-      `Dear ${order.customer.name}, we regret to inform you that your ${order.deviceDetails?.brand} ${order.deviceDetails?.model} repair (Order: ${order.orderNumber}) could not be completed. Reason: ${reason.trim()}. Our team will contact you shortly to arrange device return. Sorry for the inconvenience. - E-RepairHub`
+      `Dear ${order.customer.name}, we regret to inform you that your ${order.deviceDetails?.brand} ${order.deviceDetails?.model} repair (Order: ${order.orderNumber}) could not be completed. Reason: ${reason.trim()}. Our team will contact you shortly. - E-RepairHub`
     );
 
     ok(res, order, "Repair rejected and customer notified");
   } catch (e) { next(e); }
 }
 
+// ── Request extra service ─────────────────────────────────────────────────────
 export async function requestExtraService(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -345,7 +430,6 @@ export async function requestExtraService(req: AuthedRequest, res: Response, nex
     if (!order) return fail(res, "Order not found", 404);
     if (order.status !== "repairing") return fail(res, "Order must be in repairing state");
 
-    // Check no pending extra service already exists
     const hasPending = (order as any).extraServices?.some((s: any) => s.status === "pending");
     if (hasPending) return fail(res, "There is already a pending extra service awaiting customer approval");
 
@@ -367,10 +451,9 @@ export async function requestExtraService(req: AuthedRequest, res: Response, nex
 
     await order.save();
 
-    // Notify customer
     await sendSms(
       order.customer.phone,
-      `E-RepairHub: Additional service needed for your ${order.deviceDetails?.brand} ${order.deviceDetails?.model} (${order.orderNumber}). Service: ${name.trim()}, Cost: ₹${price}. Reason: ${reason.trim()}. Please visit your tracking page to approve or reject: http://localhost:5176/track?orderNumber=${order.orderNumber}`
+      `E-RepairHub: Additional service needed for your ${order.deviceDetails?.brand} ${order.deviceDetails?.model} (${order.orderNumber}). Service: ${name.trim()}, Cost: ₹${price}. Reason: ${reason.trim()}. Approve/reject at: http://localhost:5176/track?orderNumber=${order.orderNumber}`
     );
 
     ok(res, order, "Extra service requested — customer notified via SMS");

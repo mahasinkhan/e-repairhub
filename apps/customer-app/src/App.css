@@ -2,3 +2,5 @@
 .app-main--offset {
   padding-top: var(--header-h);
 }
+
+* { -webkit-tap-highlight-color: transparent; } button, a { touch-action: manipulation; }
