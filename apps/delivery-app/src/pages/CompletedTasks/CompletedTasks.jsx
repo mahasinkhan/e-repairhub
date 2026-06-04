@@ -1,243 +1,347 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import {
+  Package, Truck, CheckCircle2, Search, X, RefreshCw,
+  User, MapPin, Wrench, Clock, Phone, Hash, Eye,
+  ChevronDown,
+} from "lucide-react";
+import { getMyTasks } from "../../services/delivery.api.js";
 import "./CompletedTasks.css";
 
-// ── SVG Icon helper ──────────────────────────────────────────────────────────
-const Svg = ({ d }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
-  </svg>
-);
+/* ── Date helpers ── */
+function formatDate(dateStr) {
+  if (!dateStr) return "—";
+  const d    = new Date(dateStr);
+  const now  = new Date();
+  const diff = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  if (diff <= 7)  return `${diff} days ago`;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
 
-const IC = {
-  check:   "M20 6L9 17l-5-5",
-  user:    "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
-  device:  "M12 18h.01M8 21h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z",
-  pickup:  "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
-  drop:    "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0zM12 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z",
-  clock:   "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2",
-  search:  "M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z",
-  id:      "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM8 10h8M8 14h4",
-  chevron: "M6 9l6 6 6-6",
-};
+function matchesDateFilter(task, filter) {
+  if (filter === "All Time") return true;
+  if (filter === "Today")     return task.date === "Today";
+  if (filter === "Yesterday") return task.date === "Yesterday";
+  if (filter === "This Week") {
+    if (!task.completedAt) return false;
+    return (Date.now() - new Date(task.completedAt)) / 86400000 <= 7;
+  }
+  return true;
+}
 
-// ── Dummy Data ───────────────────────────────────────────────────────────────
-const TODAY = "Today";
-const TASKS = [
-  { id:"CMP-3001", customer:"Priya Sharma",  device:"Laptop",     pickup:"12 MG Road, Buxar",        delivery:"34 Nehru Colony, Patna",      time:"08:45 AM", date: TODAY },
-  { id:"CMP-3002", customer:"Arjun Mehta",   device:"Smartphone", pickup:"7 Civil Lines, Ara",        delivery:"88 Station Road, Varanasi",   time:"09:20 AM", date: TODAY },
-  { id:"CMP-3003", customer:"Sunita Verma",  device:"Tablet",     pickup:"22 Park Ave, Chapra",       delivery:"15 Gandhi Nagar, Muzaffarpur",time:"10:05 AM", date: TODAY },
-  { id:"CMP-3004", customer:"Rahul Gupta",   device:"Smartwatch", pickup:"5 Model Town, Bhagalpur",  delivery:"67 Raja Bazar, Patna",        time:"11:30 AM", date: TODAY },
-  { id:"CMP-3005", customer:"Kavita Singh",  device:"Earbuds",    pickup:"9 Ashoka Road, Ghazipur",  delivery:"3 MG Road, Buxar",            time:"12:00 PM", date: TODAY },
-  { id:"CMP-3006", customer:"Amit Kumar",    device:"Camera",     pickup:"41 Shivaji Nagar, Ara",    delivery:"18 Civil Lines, Chapra",       time:"01:15 PM", date:"Yesterday" },
-  { id:"CMP-3007", customer:"Deepa Tiwari",  device:"Laptop",     pickup:"77 Lal Bagh, Patna",       delivery:"2 Station Road, Bhagalpur",   time:"02:40 PM", date:"Yesterday" },
-  { id:"CMP-3008", customer:"Vikram Yadav",  device:"Tablet",     pickup:"30 Tilak Nagar, Varanasi", delivery:"11 Nehru Nagar, Ara",          time:"03:55 PM", date:"Yesterday" },
-  { id:"CMP-3009", customer:"Meena Dubey",   device:"Smartphone", pickup:"6 Sector 4, Muzaffarpur",  delivery:"56 Model Town, Buxar",        time:"04:30 PM", date:"2 days ago" },
-  { id:"CMP-3010", customer:"Suresh Pandey", device:"Smartwatch", pickup:"14 Raja Park, Bhagalpur",  delivery:"29 Gandhi Road, Ghazipur",    time:"05:10 PM", date:"2 days ago" },
-];
+/* ── Normalise backend task ── */
+function normalise(t) {
+  const brand       = t.order?.deviceDetails?.brand ?? "";
+  const model       = t.order?.deviceDetails?.model ?? "";
+  const completedAt = t.completedAt ?? t.updatedAt;
+  return {
+    _id:         t._id,
+    id:          t.order?.orderNumber ?? t._id,
+    taskType:    t.taskType,
+    customer:    t.order?.customer?.name    ?? "—",
+    phone:       t.order?.customer?.phone   ?? "",
+    device:      [brand, model].filter(Boolean).join(" ") || "—",
+    address:     t.order?.customer?.address ?? "—",
+    service:     t.order?.serviceType ?? "—",
+    price:       t.order?.price ?? null,
+    completedAt,
+    time:        completedAt
+                   ? new Date(completedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+                   : "—",
+    date:        formatDate(completedAt),
+  };
+}
 
-const DEVICE_OPTIONS = ["All Devices", ...Array.from(new Set(TASKS.map(t => t.device)))];
-const DATE_OPTIONS   = ["All Time", TODAY, "Yesterday", "2 days ago"];
-
-// ── InfoRow ──────────────────────────────────────────────────────────────────
-function InfoRow({ icon, label, value, valueClass }) {
+/* ── Skeleton card ── */
+function Skeleton() {
   return (
-    <div className="completed-task-info-row">
-      <div className="completed-task-info-icon"><Svg d={icon} /></div>
-      <div>
-        <div className="completed-task-info-label">{label}</div>
-        <div className={`completed-task-info-value ${valueClass || ""}`}>{value}</div>
+    <div className="cpt-card cpt-skeleton">
+      <div className="cpt-card-head">
+        <div className="cpt-skel cpt-skel-pill" />
+        <div className="cpt-skel cpt-skel-badge" />
+      </div>
+      {[1,2,3,4].map(i => (
+        <div className="cpt-info-row" key={i}>
+          <div className="cpt-skel cpt-skel-icon" />
+          <div style={{ flex:1 }}>
+            <div className="cpt-skel cpt-skel-lbl" />
+            <div className="cpt-skel cpt-skel-val" style={{ width: i%2===0 ? "65%" : "50%" }} />
+          </div>
+        </div>
+      ))}
+      <div className="cpt-card-foot">
+        <div className="cpt-skel cpt-skel-btn" />
       </div>
     </div>
   );
 }
 
-// ── Modal ────────────────────────────────────────────────────────────────────
-function DetailsModal({ task, onClose }) {
-  const rows = [
-    { icon: IC.id,     label: "Order ID",          value: task.id },
-    { icon: IC.user,   label: "Customer",           value: task.customer },
-    { icon: IC.device, label: "Device",             value: task.device },
-    { icon: IC.pickup, label: "Pickup Address",     value: task.pickup },
-    { icon: IC.drop,   label: "Delivery Address",   value: task.delivery },
-    { icon: IC.clock,  label: "Completed Time",     value: `${task.date} · ${task.time}` },
-  ];
+/* ── Task Card ── */
+function TaskCard({ task, onView }) {
+  const isPickup = task.taskType === "pickup";
   return (
-    <div className="completed-task-modal-overlay" onClick={onClose}>
-      <div className="completed-task-modal" onClick={e => e.stopPropagation()}>
-        <div className="completed-task-modal-header">
-          <span className="completed-task-modal-title">Task Details</span>
-          <button className="completed-task-modal-close" onClick={onClose}>×</button>
+    <div className="cpt-card">
+      <div className="cpt-card-head">
+        <div className="cpt-card-head-left">
+          <div className={`cpt-type-icon ${isPickup ? "cpt-ti-pickup" : "cpt-ti-delivery"}`}>
+            {isPickup ? <Package size={13} /> : <Truck size={13} />}
+          </div>
+          <span className="cpt-order-id">{task.id}</span>
+          <span className={`cpt-type-chip ${isPickup ? "cpt-chip-pickup" : "cpt-chip-delivery"}`}>
+            {isPickup ? "PICKUP" : "DELIVERY"}
+          </span>
         </div>
-        <div className="completed-task-modal-body">
+        <span className="cpt-done-badge">
+          <CheckCircle2 size={11} /> Completed
+        </span>
+      </div>
+
+      <div className="cpt-info-rows">
+        {[
+          { icon: User,   label: "Customer", value: `${task.customer}${task.phone ? " · " + task.phone : ""}` },
+          { icon: Wrench, label: "Device",   value: task.device  },
+          { icon: MapPin, label: "Address",  value: task.address },
+          { icon: Clock,  label: "Completed",value: `${task.date} · ${task.time}`, green: true },
+        ].map(r => (
+          <div className="cpt-info-row" key={r.label}>
+            <div className="cpt-info-icon"><r.icon size={13} /></div>
+            <div className="cpt-info-text">
+              <span className="cpt-info-lbl">{r.label}</span>
+              <span className={`cpt-info-val ${r.green ? "cpt-info-val-green" : ""}`}>{r.value}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="cpt-card-foot">
+        <button className="cpt-view-btn" onClick={() => onView(task)}>
+          <Eye size={13} /> View Details
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Details Modal ── */
+function Modal({ task, onClose }) {
+  const isPickup = task.taskType === "pickup";
+  const rows = [
+    { icon: Hash,    label: "Order ID",    value: task.id,       mono: true },
+    { icon: User,    label: "Customer",    value: task.customer              },
+    { icon: Phone,   label: "Phone",       value: task.phone || "—"          },
+    { icon: Wrench,  label: "Device",      value: task.device                },
+    { icon: MapPin,  label: "Address",     value: task.address               },
+    { icon: Wrench,  label: "Service",     value: task.service               },
+    ...(task.price != null ? [{ icon: Hash, label: "Price", value: `₹${Number(task.price).toLocaleString("en-IN")}` }] : []),
+    { icon: Clock,   label: "Completed",  value: `${task.date} · ${task.time}` },
+  ];
+
+  return (
+    <div className="cpt-overlay" onClick={onClose}>
+      <div className="cpt-modal" onClick={e => e.stopPropagation()}>
+        <div className="cpt-modal-head">
+          <div className="cpt-modal-head-left">
+            <div className={`cpt-modal-icon ${isPickup ? "cpt-mi-pickup" : "cpt-mi-delivery"}`}>
+              {isPickup ? <Package size={16} /> : <Truck size={16} />}
+            </div>
+            <div>
+              <h2 className="cpt-modal-title">Completed Task</h2>
+              <p className="cpt-modal-sub">{task.id}</p>
+            </div>
+          </div>
+          <button className="cpt-modal-close" onClick={onClose}><X size={14} /></button>
+        </div>
+
+        <div className="cpt-modal-status-bar">
+          <span className="cpt-done-badge">
+            <CheckCircle2 size={11} /> Completed
+          </span>
+          <span className="cpt-modal-type">
+            {isPickup ? "↑ Pickup" : "↓ Delivery"}
+          </span>
+        </div>
+
+        <div className="cpt-modal-body">
           {rows.map(r => (
-            <div className="completed-task-modal-row" key={r.label}>
-              <div className="completed-task-modal-icon"><Svg d={r.icon} /></div>
+            <div className="cpt-modal-row" key={r.label}>
+              <div className="cpt-modal-row-icon"><r.icon size={13} /></div>
               <div>
-                <div className="completed-task-modal-row-label">{r.label}</div>
-                <div className="completed-task-modal-row-value">{r.value}</div>
+                <p className="cpt-modal-row-lbl">{r.label}</p>
+                <p className={`cpt-modal-row-val ${r.mono ? "cpt-mono" : ""}`}>{r.value}</p>
               </div>
             </div>
           ))}
-          <div className="completed-task-modal-row">
-            <div className="completed-task-modal-icon"><Svg d={IC.check} /></div>
-            <div>
-              <div className="completed-task-modal-row-label">Status</div>
-              <span className="completed-task-badge">
-                <span className="completed-task-badge-dot" />Completed
-              </span>
-            </div>
-          </div>
         </div>
-        <div className="completed-task-modal-footer">
-          <button className="completed-task-btn completed-task-btn-outline"
-            style={{ padding: "9px 28px" }} onClick={onClose}>Close</button>
+
+        <div className="cpt-modal-foot">
+          <button className="cpt-btn cpt-btn-ghost" onClick={onClose}>Close</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Card ─────────────────────────────────────────────────────────────────────
-function TaskCard({ task, onView }) {
-  return (
-    <div className="completed-task-card">
-      <div className="completed-task-card-header">
-        <span className="completed-task-order-id">{task.id}</span>
-        <span className="completed-task-badge">
-          <span className="completed-task-badge-dot" />Completed
-        </span>
-      </div>
-      <div className="completed-task-info">
-        <InfoRow icon={IC.user}   label="Customer"         value={task.customer} />
-        <InfoRow icon={IC.device} label="Device"           value={task.device} />
-        <InfoRow icon={IC.pickup} label="Pickup Address"   value={task.pickup} />
-        <InfoRow icon={IC.drop}   label="Delivery Address" value={task.delivery} />
-        <InfoRow icon={IC.clock}  label="Completed"
-          value={`${task.date} · ${task.time}`}
-          valueClass="completed-task-time-value" />
-      </div>
-      <hr className="completed-task-divider" />
-      <div className="completed-task-card-footer">
-        <button className="completed-task-btn completed-task-btn-outline"
-          onClick={() => onView(task)}>View Details</button>
-      </div>
-    </div>
-  );
-}
-
-// ── Main ─────────────────────────────────────────────────────────────────────
+/* ── Main Component ── */
 export default function CompletedTasks() {
-  const [search,     setSearch]     = useState("");
-  const [deviceFilt, setDeviceFilt] = useState("All Devices");
-  const [dateFilt,   setDateFilt]   = useState("All Time");
-  const [modal,      setModal]      = useState(null);
+  const [tasks,    setTasks]    = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [search,   setSearch]   = useState("");
+  const [typeFilt, setTypeFilt] = useState("All");
+  const [dateFilt, setDateFilt] = useState("All Time");
+  const [modal,    setModal]    = useState(null);
 
-  const todayCount = useMemo(() => TASKS.filter(t => t.date === TODAY).length, []);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getMyTasks();
+      setTasks((data ?? []).filter(t => t.status === "completed").map(normalise));
+    } catch (e) { console.error("Failed to load:", e); }
+    finally { setLoading(false); }
+  }, []);
 
+  useEffect(() => { load(); }, [load]);
+
+  /* Stats */
+  const stats = useMemo(() => ({
+    total:      tasks.length,
+    today:      tasks.filter(t => t.date === "Today").length,
+    pickups:    tasks.filter(t => t.taskType === "pickup").length,
+    deliveries: tasks.filter(t => t.taskType === "delivery").length,
+  }), [tasks]);
+
+  /* Filtered list */
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return TASKS.filter(t => {
-      const matchQ = !q ||
-        t.id.toLowerCase().includes(q) ||
+    return tasks.filter(t => {
+      const matchQ =
+        !q ||
+        t.id.toLowerCase().includes(q)       ||
         t.customer.toLowerCase().includes(q) ||
-        t.device.toLowerCase().includes(q) ||
-        t.pickup.toLowerCase().includes(q) ||
-        t.delivery.toLowerCase().includes(q);
-      const matchD = deviceFilt === "All Devices" || t.device === deviceFilt;
-      const matchDate = dateFilt === "All Time" || t.date === dateFilt;
-      return matchQ && matchD && matchDate;
+        t.device.toLowerCase().includes(q)   ||
+        t.address.toLowerCase().includes(q)  ||
+        t.phone.includes(q);
+      const matchType = typeFilt === "All" || t.taskType === typeFilt.toLowerCase();
+      const matchDate = matchesDateFilter(t, dateFilt);
+      return matchQ && matchType && matchDate;
     });
-  }, [search, deviceFilt, dateFilt]);
+  }, [tasks, search, typeFilt, dateFilt]);
+
+  const TYPE_FILTERS = ["All", "Pickup", "Delivery"];
+  const DATE_FILTERS = ["All Time", "Today", "Yesterday", "This Week"];
 
   return (
-    <div className="completed-task-page">
+    <div className="cpt-root">
 
-      {/* Header */}
-   
-
-      <main className="completed-task-container">
-
-        {/* Top Section */}
-        <div className="completed-task-top">
-          <div>
-            <div className="completed-task-page-title">Completed Tasks</div>
-            <div className="completed-task-page-desc">All successfully delivered orders</div>
-          </div>
-          <div className="completed-task-summary">
-            <div className="completed-task-summary-card">
-              <div className="completed-task-summary-label">Total Completed</div>
-              <div className="completed-task-summary-value">{TASKS.length}</div>
-              <div className="completed-task-summary-sub">All time</div>
-            </div>
-            <div className="completed-task-summary-card">
-              <div className="completed-task-summary-label">Today's Tasks</div>
-              <div className="completed-task-summary-value">{todayCount}</div>
-              <div className="completed-task-summary-sub">Completed today</div>
-            </div>
-          </div>
+      {/* ── Page header ── */}
+      <div className="cpt-page-head">
+        <div>
+          <h1 className="cpt-title">Completed Tasks</h1>
+          <p className="cpt-subtitle">All successfully completed pickup &amp; delivery orders</p>
         </div>
+        <button className="cpt-refresh-btn" onClick={load} disabled={loading}>
+          <RefreshCw size={13} className={loading ? "cpt-spin" : ""} />
+          Refresh
+        </button>
+      </div>
 
-        {/* Toolbar */}
-        <div className="completed-task-toolbar">
-          <div className="completed-task-search-wrap">
-            <svg className="completed-task-search-icon" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d={IC.search} />
-            </svg>
-            <input
-              className="completed-task-search"
-              type="text"
-              placeholder="Search order, customer, device…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
+      {/* ── Stats strip ── */}
+      <div className="cpt-stats">
+        {[
+          { label: "Total Completed", value: stats.total,      color: "cpt-stat-green",   sub: "All time" },
+          { label: "Today",           value: stats.today,      color: "cpt-stat-orange",  sub: "Completed today" },
+          { label: "Pickups",         value: stats.pickups,    color: "cpt-stat-purple",  sub: "Device collections" },
+          { label: "Deliveries",      value: stats.deliveries, color: "cpt-stat-blue",    sub: "Device returns" },
+        ].map(s => (
+          <div key={s.label} className={`cpt-stat ${s.color}`}>
+            <p className="cpt-stat-label">{s.label}</p>
+            <p className="cpt-stat-val">{loading ? "—" : s.value}</p>
+            <p className="cpt-stat-sub">{s.sub}</p>
           </div>
+        ))}
+      </div>
 
-          <div className="completed-task-select-wrap">
-            <select className="completed-task-select"
-              value={deviceFilt} onChange={e => setDeviceFilt(e.target.value)}>
-              {DEVICE_OPTIONS.map(o => <option key={o}>{o}</option>)}
-            </select>
-            <svg className="completed-task-select-arrow" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d={IC.chevron} />
-            </svg>
-          </div>
-
-          <div className="completed-task-select-wrap">
-            <select className="completed-task-select"
-              value={dateFilt} onChange={e => setDateFilt(e.target.value)}>
-              {DATE_OPTIONS.map(o => <option key={o}>{o}</option>)}
-            </select>
-            <svg className="completed-task-select-arrow" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d={IC.chevron} />
-            </svg>
-          </div>
-        </div>
-
-        <div className="completed-task-count">
-          Showing {filtered.length} of {TASKS.length} completed tasks
-        </div>
-
-        {/* Grid */}
-        <div className="completed-task-grid">
-          {filtered.length === 0 ? (
-            <div className="completed-task-empty">
-              <div className="completed-task-empty-icon">📋</div>
-              <div className="completed-task-empty-title">No tasks found</div>
-              <div className="completed-task-empty-text">Try adjusting your search or filters.</div>
-            </div>
-          ) : (
-            filtered.map(t => (
-              <TaskCard key={t.id} task={t} onView={setModal} />
-            ))
+      {/* ── Toolbar ── */}
+      <div className="cpt-toolbar">
+        {/* Search */}
+        <div className="cpt-search-wrap">
+          <Search size={14} className="cpt-search-ico" />
+          <input
+            className="cpt-search"
+            type="text"
+            placeholder="Search order, customer, device…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {search && (
+            <button className="cpt-search-clear" onClick={() => setSearch("")}>
+              <X size={13} />
+            </button>
           )}
         </div>
-      </main>
 
-      {modal && <DetailsModal task={modal} onClose={() => setModal(null)} />}
+        {/* Type filter */}
+        <div className="cpt-filter-group">
+          {TYPE_FILTERS.map(f => (
+            <button
+              key={f}
+              className={`cpt-filter-pill ${typeFilt === f ? "cpt-pill-active" : ""}`}
+              onClick={() => setTypeFilt(f)}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        {/* Date filter */}
+        <div className="cpt-filter-group">
+          {DATE_FILTERS.map(f => (
+            <button
+              key={f}
+              className={`cpt-filter-pill ${dateFilt === f ? "cpt-pill-active" : ""}`}
+              onClick={() => setDateFilt(f)}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Results label ── */}
+      {!loading && (
+        <p className="cpt-results-lbl">
+          Showing <strong>{filtered.length}</strong> of {tasks.length} completed tasks
+        </p>
+      )}
+
+      {/* ── Grid ── */}
+      <div className="cpt-grid">
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} />)
+        ) : filtered.length === 0 ? (
+          <div className="cpt-empty">
+            <div className="cpt-empty-icon"><CheckCircle2 size={28} /></div>
+            <p className="cpt-empty-title">
+              {search ? "No results found" : "No completed tasks yet"}
+            </p>
+            <span className="cpt-empty-sub">
+              {search
+                ? `Nothing matches "${search}"`
+                : "Completed tasks will appear here"}
+            </span>
+            {(search || typeFilt !== "All" || dateFilt !== "All Time") && (
+              <button className="cpt-empty-reset"
+                onClick={() => { setSearch(""); setTypeFilt("All"); setDateFilt("All Time"); }}>
+                Clear filters
+              </button>
+            )}
+          </div>
+        ) : (
+          filtered.map(t => <TaskCard key={t._id} task={t} onView={setModal} />)
+        )}
+      </div>
+
+      {modal && <Modal task={modal} onClose={() => setModal(null)} />}
     </div>
   );
 }

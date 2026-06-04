@@ -2,9 +2,36 @@ const STORAGE_KEY = 'delivery_notifications_v1'
 const EVENT = 'delivery-notifications-updated'
 
 const SEED = [
-  { id: 1, type: 'task', title: 'New task assigned', description: 'Order #ERH257 has been assigned to you.', time: '2 mins ago', isRead: false, category: 'updates', createdAt: Date.now() - 120000 },
-  { id: 2, type: 'pickup', title: 'Pickup completed', description: 'You have successfully picked up order #ERH261.', time: '15 mins ago', isRead: false, category: 'updates', createdAt: Date.now() - 900000 },
-  { id: 3, type: 'delivery', title: 'Delivery assigned', description: 'New delivery task #ERH264 assigned.', time: '45 mins ago', isRead: true, category: 'updates', createdAt: Date.now() - 2700000 },
+  {
+    id: 1,
+    type: 'task',
+    title: 'New task assigned',
+    description: 'Order #ERH257 has been assigned to you.',
+    time: '2 mins ago',
+    isRead: false,
+    category: 'updates',
+    createdAt: Date.now() - 120000,
+  },
+  {
+    id: 2,
+    type: 'pickup',
+    title: 'Pickup completed',
+    description: 'You have successfully picked up order #ERH261.',
+    time: '15 mins ago',
+    isRead: false,
+    category: 'updates',
+    createdAt: Date.now() - 900000,
+  },
+  {
+    id: 3,
+    type: 'delivery',
+    title: 'Delivery assigned',
+    description: 'New delivery task #ERH264 assigned.',
+    time: '45 mins ago',
+    isRead: true,
+    category: 'updates',
+    createdAt: Date.now() - 2700000,
+  },
 ]
 
 function load() {

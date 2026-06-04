@@ -1,12 +1,65 @@
 import { useEffect, useState } from "react";
-import { Truck, RefreshCw, MapPin, Phone, ArrowRight } from "lucide-react";
+import {
+  Truck, RefreshCw, MapPin, Phone, ArrowRight,
+  CheckCircle, Clock, Package, Navigation, Shield,
+} from "lucide-react";
 import { getMyTasks, updateTaskStatus } from "../../services/delivery.api.js";
+import "./DeliveryManagement.css";
+
+/* ─── Column config (unchanged logic) ─── */
+const CONFIGS = [
+  {
+    key:       "pending",
+    label:     "Pending",
+    accent:    "#854d0e",
+    chipBg:    "#fef9c3",
+    headerBg:  "#fffde7",
+    icon:      Clock,
+    next:      "accepted",
+    action:    "Accept Delivery",
+    actionIcon: CheckCircle,
+  },
+  {
+    key:       "accepted",
+    label:     "Accepted",
+    accent:    "#1d4ed8",
+    chipBg:    "#dbeafe",
+    headerBg:  "#eff6ff",
+    icon:      Package,
+    next:      "in_progress",
+    action:    "Start Delivery",
+    actionIcon: Truck,
+  },
+  {
+    key:       "in_progress",
+    label:     "Out for Delivery",
+    accent:    "#c2410c",
+    chipBg:    "#ffedd5",
+    headerBg:  "#fff7ed",
+    icon:      Navigation,
+    next:      "completed",
+    action:    "Mark Delivered",
+    actionIcon: CheckCircle,
+  },
+  {
+    key:       "completed",
+    label:     "Delivered",
+    accent:    "#15803d",
+    chipBg:    "#dcfce7",
+    headerBg:  "#f0fdf4",
+    icon:      CheckCircle,
+    next:      null,
+    action:    "",
+    actionIcon: null,
+  },
+];
 
 export default function DeliveryManagement() {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tasks,    setTasks]    = useState([]);
+  const [loading,  setLoading]  = useState(true);
   const [actionId, setActionId] = useState(null);
 
+  /* ── Data loading (unchanged) ── */
   const load = async () => {
     setLoading(true);
     try {
@@ -18,6 +71,7 @@ export default function DeliveryManagement() {
 
   useEffect(() => { load(); }, []);
 
+  /* ── Status transition (unchanged) ── */
   const handleAction = async (task, nextStatus) => {
     setActionId(task._id);
     try {
@@ -28,6 +82,7 @@ export default function DeliveryManagement() {
     } finally { setActionId(null); }
   };
 
+  /* ── Grouped tasks ── */
   const groups = {
     pending:     tasks.filter(t => t.status === "pending"),
     accepted:    tasks.filter(t => t.status === "accepted"),
@@ -35,71 +90,132 @@ export default function DeliveryManagement() {
     completed:   tasks.filter(t => t.status === "completed"),
   };
 
-  const CONFIGS = [
-    { key: "pending",     label: "Pending",     color: "#854d0e", bg: "#fef9c3", next: "accepted",    action: "Accept Delivery" },
-    { key: "accepted",    label: "Accepted",    color: "#1d4ed8", bg: "#dbeafe", next: "in_progress", action: "Start Delivery" },
-    { key: "in_progress", label: "Out for Delivery", color: "#c2410c", bg: "#ffedd5", next: "completed", action: "Mark Delivered" },
-    { key: "completed",   label: "Delivered",   color: "#15803d", bg: "#dcfce7", next: null,          action: "" },
-  ];
-
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+    <div className="dm-root">
+
+      {/* ── Page Header ── */}
+      <div className="dm-header">
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: "#1e293b", margin: 0 }}>Delivery Management</h1>
-          <p style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>Manage all delivery tasks</p>
+          <h1 className="dm-page-title">Delivery Management</h1>
+          <p className="dm-page-sub">Track and manage all delivery tasks</p>
         </div>
-        <button onClick={load} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#475569", cursor: "pointer" }}>
-          <RefreshCw size={14} /> Refresh
-        </button>
+        <div className="dm-header-right">
+          <div className="dm-stat-chip dm-chip--orange">
+            <Truck size={12} />
+            {groups.in_progress.length} Out for delivery
+          </div>
+          <div className="dm-stat-chip dm-chip--green">
+            <CheckCircle size={12} />
+            {groups.completed.length} Delivered
+          </div>
+          <button onClick={load} className="dm-refresh-btn">
+            <RefreshCw size={13} className={loading ? "dm-spin" : ""} />
+            Refresh
+          </button>
+        </div>
       </div>
 
+      {/* ── Kanban Board ── */}
       {loading ? (
-        <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8" }}>
-          <RefreshCw size={20} style={{ animation: "spin 1s linear infinite" }} />
+        <div className="dm-loading">
+          <RefreshCw size={24} className="dm-spin" />
+          <p>Loading deliveries…</p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
-          {CONFIGS.map(cfg => (
-            <div key={cfg.key} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, overflow: "hidden" }}>
-              <div style={{ padding: "14px 18px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: cfg.color }} />
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", margin: 0 }}>{cfg.label}</h3>
-                </div>
-                <span style={{ background: cfg.bg, color: cfg.color, borderRadius: 999, padding: "2px 10px", fontSize: 12, fontWeight: 700 }}>
-                  {groups[cfg.key].length}
-                </span>
-              </div>
-              {groups[cfg.key].length === 0 ? (
-                <div style={{ padding: "24px", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>No tasks</div>
-              ) : (
-                <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-                  {groups[cfg.key].map(task => (
-                    <div key={task._id} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: "12px 14px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                        <span style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>{task.order?.orderNumber}</span>
-                        <span style={{ fontSize: 11, color: "#94a3b8" }}>OTP: <strong>{task.otp}</strong></span>
-                      </div>
-                      <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>
-                        <div style={{ display: "flex", gap: 5, marginBottom: 3 }}><Phone size={11} />{task.order?.customer?.name} · {task.order?.customer?.phone}</div>
-                        <div style={{ display: "flex", gap: 5 }}><MapPin size={11} />{task.order?.customer?.address}</div>
-                      </div>
-                      {cfg.next && (
-                        <button onClick={() => handleAction(task, cfg.next)} disabled={actionId === task._id}
-                          style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", background: cfg.bg, color: cfg.color, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                          <ArrowRight size={13} /> {actionId === task._id ? "..." : cfg.action}
-                        </button>
-                      )}
+        <div className="dm-kanban">
+          {CONFIGS.map(cfg => {
+            const ColIcon  = cfg.icon;
+            return (
+              <div key={cfg.key} className="dm-col" style={{ "--col-accent": cfg.accent }}>
+
+                {/* Column Header */}
+                <div className="dm-col-head" style={{ background: cfg.headerBg }}>
+                  <div className="dm-col-head-left">
+                    <div className="dm-col-icon" style={{ color: cfg.accent, background: cfg.chipBg }}>
+                      <ColIcon size={13} />
                     </div>
-                  ))}
+                    <span className="dm-col-title" style={{ color: cfg.accent }}>
+                      {cfg.label}
+                    </span>
+                  </div>
+                  <span className="dm-col-count" style={{ background: cfg.chipBg, color: cfg.accent }}>
+                    {groups[cfg.key].length}
+                  </span>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {/* Task List */}
+                <div className="dm-col-body">
+                  {groups[cfg.key].length === 0 ? (
+                    <div className="dm-col-empty">
+                      <Truck size={22} className="dm-empty-icon" />
+                      <span>No deliveries</span>
+                    </div>
+                  ) : (
+                    groups[cfg.key].map(task => {
+                      const ActionIcon = cfg.actionIcon;
+                      const busy       = actionId === task._id;
+                      return (
+                        <div key={task._id} className="dm-task">
+
+                          {/* Task top row */}
+                          <div className="dm-task-top">
+                            <span className="dm-task-id">{task.order?.orderNumber}</span>
+                            <span className="dm-otp-badge">
+                              <Shield size={9} />
+                              {task.otp}
+                            </span>
+                          </div>
+
+                          {/* Task details */}
+                          <div className="dm-task-rows">
+                            <div className="dm-task-row">
+                              <Phone size={11} />
+                              <span>{task.order?.customer?.name} · {task.order?.customer?.phone}</span>
+                            </div>
+                            <div className="dm-task-row">
+                              <MapPin size={11} />
+                              <span>{task.order?.customer?.address}</span>
+                            </div>
+                            {task.order?.deviceDetails && (
+                              <div className="dm-task-row">
+                                <Package size={11} />
+                                <span>
+                                  {task.order.deviceDetails.brand} {task.order.deviceDetails.model}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action button */}
+                          {cfg.next && (
+                            <button
+                              onClick={() => handleAction(task, cfg.next)}
+                              disabled={busy}
+                              className="dm-action-btn"
+                              style={{
+                                background: cfg.chipBg,
+                                color:      cfg.accent,
+                                borderColor: `${cfg.accent}35`,
+                              }}
+                            >
+                              {busy
+                                ? <RefreshCw size={11} className="dm-spin" />
+                                : ActionIcon && <ActionIcon size={11} />
+                              }
+                              {busy ? "Updating…" : cfg.action}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
     </div>
   );
 }

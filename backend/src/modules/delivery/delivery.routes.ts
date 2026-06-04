@@ -104,4 +104,15 @@ deliveryRouter.get("/agents/:id/tasks",    getAgentTasks);
 deliveryRouter.patch("/agents/:id/status", requireRoles("admin"), patchAgentStatus);
 deliveryRouter.get("/tasks",               requireRoles("admin"), getAllTasks);
 deliveryRouter.post("/tasks",              requireRoles("admin"), createTask);
+// GET single task by ID
+deliveryRouter.get("/tasks/:id", async (req, res, next) => {
+  try {
+    const task = await DeliveryTask.findById(req.params.id)
+      .populate("order", "orderNumber customer deviceDetails serviceType status price")
+      .populate("agent", "name phone")
+      .lean();
+    if (!task) return res.status(404).json({ success: false, message: "Task not found" });
+    res.json({ success: true, data: task });
+  } catch(e) { next(e); }
+});
 deliveryRouter.patch("/tasks/:id/status",  updateTaskStatus);

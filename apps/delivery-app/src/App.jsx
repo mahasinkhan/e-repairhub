@@ -10,6 +10,7 @@ import Profile from "./pages/Profile/Profile.jsx";
 import Notifications from "./pages/Notifications/Notifications.jsx";
 import PerformanceReports from "./pages/PerformanceReports/PerformanceReports.jsx";
 import Settings from "./pages/Settings/Setting.tsx";
+import OtpVerificationPage from "./pages/OtpVerification/OtpVerificationPage.jsx"; // ← ADD
 
 export default function App() {
   return (
@@ -31,7 +32,7 @@ export default function App() {
         <Route path="performance-reports" element={<PerformanceReports />} />
         <Route path="profile" element={<Profile />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="otp-verification" element={<Tasks />} />
+        <Route path="otp-verification" element={<OtpVerificationPage />} /> {/* ← FIXED */}
         <Route path="completed-tasks" element={<Tasks />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
