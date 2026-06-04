@@ -1,99 +1,139 @@
 import { useEffect, useState } from "react";
-import { User, Phone, Mail, RefreshCw, CheckCircle } from "lucide-react";
+import {
+  User, Phone, Mail, RefreshCw, CheckCircle2,
+  MapPin, Shield, Package, Truck, TrendingUp, Hash,
+} from "lucide-react";
 import { getMyProfile, getMyStats } from "../../services/delivery.api.js";
+import "./Profile.css";
+
+function StatCard({ label, value, color, bg, loading }) {
+  return (
+    <div className="pf-stat" style={{ background: bg }}>
+      <p className="pf-stat-val" style={{ color }}>{loading ? "—" : value}</p>
+      <p className="pf-stat-lbl">{label}</p>
+    </div>
+  );
+}
+
+function InfoRow({ icon: Icon, label, value }) {
+  return (
+    <div className="pf-info-row">
+      <div className="pf-info-icon"><Icon size={15} /></div>
+      <div>
+        <p className="pf-info-lbl">{label}</p>
+        <p className="pf-info-val">{value || "—"}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
-  const [stats, setStats] = useState(null);
+  const [stats,   setStats]   = useState(null);
   const [loading, setLoading] = useState(true);
-  const user = (() => { try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; } })();
 
-  useEffect(() => {
-    Promise.all([getMyProfile(), getMyStats()])
-      .then(([p, s]) => { setProfile(p); setStats(s); })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  const user = (() => {
+    try { return JSON.parse(localStorage.getItem("user") || "{}"); }
+    catch { return {}; }
+  })();
 
-  if (loading) return (
-    <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", paddingTop: 60 }}>
-      <RefreshCw size={20} style={{ animation: "spin 1s linear infinite" }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [p, s] = await Promise.all([getMyProfile(), getMyStats()]);
+      setProfile(p); setStats(s);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const name    = profile?.name     ?? user.name     ?? "Agent";
+  const initial = name.charAt(0).toUpperCase();
+  const rate    = stats?.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
   return (
-    <div style={{ padding: 20, maxWidth: 600 }}>
-      <h1 style={{ fontSize: 20, fontWeight: 800, color: "#1e293b", marginBottom: 20 }}>Profile</h1>
+    <div className="pf-root">
 
-      {/* Avatar card */}
-      <div style={{ background: "linear-gradient(135deg, #ea580c, #f97316)", borderRadius: 18, padding: "24px", marginBottom: 16, color: "#fff", display: "flex", alignItems: "center", gap: 18 }}>
-        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800 }}>
-          {user.name?.charAt(0)?.toUpperCase()}
-        </div>
+      {/* Header */}
+      <div className="pf-page-head">
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{profile?.name ?? user.name}</h2>
-          <p style={{ fontSize: 13, opacity: 0.8, margin: "4px 0 0" }}>Delivery Agent · E-RepairHub</p>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.2)", borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 600, marginTop: 6 }}>
-            <CheckCircle size={11} /> {profile?.isActive ? "Active" : "Inactive"}
+          <h1 className="pf-title">My Profile</h1>
+          <p className="pf-subtitle">Delivery agent account details</p>
+        </div>
+        <button className="pf-refresh-btn" onClick={load}>
+          <RefreshCw size={13} className={loading ? "pf-spin" : ""} /> Refresh
+        </button>
+      </div>
+
+      {/* Avatar banner */}
+      <div className="pf-banner">
+        <div className="pf-avatar">{initial}</div>
+        <div className="pf-banner-info">
+          <h2 className="pf-name">{name}</h2>
+          <p className="pf-role">Delivery Agent · E-RepairHub</p>
+          <span className="pf-status-pill">
+            <CheckCircle2 size={11} />
+            {profile?.isActive ? "Active" : "Inactive"}
           </span>
         </div>
       </div>
 
-      {/* Contact */}
-      <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: "20px", marginBottom: 16 }}>
-        <h3 style={{ fontSize: 13, fontWeight: 700, color: "#475569", marginBottom: 14, textTransform: "uppercase" }}>Contact</h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {[
-            { icon: User,  label: "Username", value: profile?.username ?? user.username },
-            { icon: Mail,  label: "Email",    value: profile?.email ?? user.email },
-            { icon: Phone, label: "Phone",    value: profile?.phone || "Not set" },
-          ].map(item => {
-            const Icon = item.icon;
-            return (
-              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 36, height: 36, background: "#fff7ed", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Icon size={16} color="#f97316" />
-                </div>
-                <div>
-                  <p style={{ fontSize: 11, color: "#94a3b8", margin: 0, textTransform: "uppercase" }}>{item.label}</p>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "#1e293b", margin: 0 }}>{item.value}</p>
-                </div>
-              </div>
-            );
-          })}
+      {/* Contact card */}
+      <div className="pf-card">
+        <h3 className="pf-card-title">Contact Information</h3>
+        <div className="pf-info-list">
+          <InfoRow icon={Hash}   label="Username" value={profile?.username ?? user.username} />
+          <InfoRow icon={Mail}   label="Email"    value={profile?.email    ?? user.email} />
+          <InfoRow icon={Phone}  label="Phone"    value={profile?.phone    ?? "Not set"} />
+          {profile?.city && <InfoRow icon={MapPin} label="City" value={profile.city} />}
         </div>
       </div>
 
-      {/* Stats */}
-      {stats && (
-        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: "20px" }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color: "#475569", marginBottom: 14, textTransform: "uppercase" }}>Performance</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-            {[
-              { label: "Total",     value: stats.total,     color: "#7c3aed", bg: "#f5f3ff" },
-              { label: "Completed", value: stats.completed, color: "#15803d", bg: "#f0fdf4" },
-              { label: "Active",    value: stats.active,    color: "#c2410c", bg: "#fff7ed" },
-            ].map(s => (
-              <div key={s.label} style={{ background: s.bg, borderRadius: 12, padding: "12px", textAlign: "center" }}>
-                <p style={{ fontSize: 24, fontWeight: 800, color: s.color, margin: 0 }}>{s.value}</p>
-                <p style={{ fontSize: 11, color: "#64748b", marginTop: 3 }}>{s.label}</p>
-              </div>
-            ))}
-          </div>
-          {stats.total > 0 && (
-            <div style={{ marginTop: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#64748b", marginBottom: 6 }}>
-                <span>Success Rate</span>
-                <span style={{ fontWeight: 700, color: "#15803d" }}>{Math.round((stats.completed / stats.total) * 100)}%</span>
-              </div>
-              <div style={{ height: 8, background: "#e2e8f0", borderRadius: 999, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${Math.round((stats.completed / stats.total) * 100)}%`, background: "linear-gradient(90deg, #f97316, #ea580c)", borderRadius: 999 }} />
-              </div>
-            </div>
-          )}
+      {/* Performance stats */}
+      <div className="pf-card">
+        <h3 className="pf-card-title">Performance Summary</h3>
+        <div className="pf-stats-grid">
+          <StatCard label="Total Tasks"   value={stats?.total     ?? 0} color="#7C3AED" bg="#EDE9FE" loading={loading} />
+          <StatCard label="Completed"     value={stats?.completed ?? 0} color="#16A34A" bg="#F0FDF4" loading={loading} />
+          <StatCard label="Active"        value={stats?.active    ?? 0} color="#C2410C" bg="#FFF7ED" loading={loading} />
+          <StatCard label="Today Done"    value={stats?.completedToday ?? 0} color="#0369A1" bg="#E0F2FE" loading={loading} />
         </div>
-      )}
+
+        {/* Breakdown */}
+        <div className="pf-breakdown">
+          {[
+            { icon: Package, label: "Pickups",   value: stats?.pickup   ?? 0, color: "#7C3AED", bg: "#EDE9FE" },
+            { icon: Truck,   label: "Deliveries",value: stats?.delivery ?? 0, color: "#059669", bg: "#ECFDF5" },
+          ].map(b => (
+            <div key={b.label} className="pf-breakdown-item" style={{ background: b.bg }}>
+              <b.icon size={16} color={b.color} />
+              <p className="pf-breakdown-val" style={{ color: b.color }}>{loading ? "—" : b.value}</p>
+              <p className="pf-breakdown-lbl">{b.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Success rate bar */}
+        {!loading && stats?.total > 0 && (
+          <div className="pf-rate">
+            <div className="pf-rate-head">
+              <span className="pf-rate-label"><TrendingUp size={13} /> Success Rate</span>
+              <span className="pf-rate-pct">{rate}%</span>
+            </div>
+            <div className="pf-rate-track">
+              <div className="pf-rate-fill" style={{ width: `${rate}%` }} />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Account info */}
+      <div className="pf-card pf-account">
+        <Shield size={14} />
+        <p>Your account is managed by E-RepairHub. Contact your administrator to update account details.</p>
+      </div>
+
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import {
   Package, RefreshCw, MapPin, Phone, ArrowRight,
-  CheckCircle, Clock, Navigation, Shield,
+  CheckCircle, Clock, Navigation, Shield, Download, Calendar,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { getMyTasks, updateTaskStatus } from "../../services/delivery.api.js";
 import "./PickupManagement.css";
 
@@ -59,6 +60,7 @@ export default function PickupManagement() {
   const [loading,  setLoading]  = useState(true);
   const [actionId, setActionId] = useState(null);
   const [messages, setMessages] = useState({});
+  const [monthFilter, setMonthFilter] = useState("All");
 
   /* ── Data loading (unchanged) ── */
   const load = async () => {
@@ -84,12 +86,46 @@ export default function PickupManagement() {
     } finally { setActionId(null); }
   };
 
+  /* ── Month filter helpers ── */
+  const availableMonths = ["All", ...Array.from(new Set(
+    tasks.map(t => {
+      const d = new Date(t.createdAt ?? t.updatedAt);
+      return isNaN(d) ? null : d.toLocaleString("en-IN", { month: "short", year: "numeric" });
+    }).filter(Boolean)
+  )).sort((a, b) => new Date("1 " + b) - new Date("1 " + a))];
+
+  const monthFiltered = monthFilter === "All" ? tasks : tasks.filter(t => {
+    const d = new Date(t.createdAt ?? t.updatedAt);
+    return !isNaN(d) && d.toLocaleString("en-IN", { month: "short", year: "numeric" }) === monthFilter;
+  });
+
   /* ── Grouped tasks ── */
   const groups = {
-    pending:     tasks.filter(t => t.status === "pending"),
-    accepted:    tasks.filter(t => t.status === "accepted"),
-    in_progress: tasks.filter(t => t.status === "in_progress"),
-    completed:   tasks.filter(t => t.status === "completed"),
+    pending:     monthFiltered.filter(t => t.status === "pending"),
+    accepted:    monthFiltered.filter(t => t.status === "accepted"),
+    in_progress: monthFiltered.filter(t => t.status === "in_progress"),
+    completed:   monthFiltered.filter(t => t.status === "completed"),
+  };
+
+  /* ── XLSX export ── */
+  const exportXLSX = () => {
+    const rows = monthFiltered.map(t => ({
+      "Order ID":       t.order?.orderNumber ?? t._id,
+      "Status":         t.status ?? "—",
+      "Customer Name":  t.order?.customer?.name  ?? "—",
+      "Customer Phone": t.order?.customer?.phone ?? "—",
+      "Address":        t.order?.customer?.address ?? "—",
+      "Device Brand":   t.order?.deviceDetails?.brand ?? "—",
+      "Device Model":   t.order?.deviceDetails?.model ?? "—",
+      "Service Type":   t.order?.serviceType ?? "—",
+      "Price (₹)":      t.order?.price ?? "—",
+      "Completed At":   t.completedAt ? new Date(t.completedAt).toLocaleString("en-IN") : "—",
+      "Created At":     t.createdAt   ? new Date(t.createdAt).toLocaleString("en-IN")   : "—",
+    }));
+    const ws  = XLSX.utils.json_to_sheet(rows);
+    const wb  = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pickups");
+    XLSX.writeFile(wb, `pickups_${monthFilter.replace(" ", "_")}_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
   return (
@@ -110,6 +146,26 @@ export default function PickupManagement() {
             <CheckCircle size={12} />
             {groups.completed.length} Completed
           </div>
+          {/* Month filter */}
+          <div className="pm-month-wrap">
+            <Calendar size={13} className="pm-month-icon" />
+            <select
+              className="pm-month-select"
+              value={monthFilter}
+              onChange={e => setMonthFilter(e.target.value)}
+            >
+              {availableMonths.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          {/* XLSX export */}
+          <button
+            className="pm-export-btn"
+            onClick={exportXLSX}
+            disabled={monthFiltered.length === 0}
+            title={`Export ${monthFiltered.length} pickups`}
+          >
+            <Download size={13} /> Export
+          </button>
           <button onClick={load} className="pm-refresh-btn">
             <RefreshCw size={13} className={loading ? "pm-spin" : ""} />
             Refresh

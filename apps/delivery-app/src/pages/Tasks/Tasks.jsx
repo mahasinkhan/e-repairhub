@@ -3,8 +3,9 @@ import {
   Search, RefreshCw, Package, Truck, ChevronRight,
   CheckCircle, Clock, XCircle, MapPin, Phone,
   Send, ShieldCheck, User, Wrench, BadgeIndianRupee,
-  ArrowLeft, AlertCircle,
+  ArrowLeft, AlertCircle, Download, Calendar,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { getMyTasks, updateTaskStatus, sendDeliveryOtp } from "../../services/delivery.api.js";
 import { toast } from "sonner";
 import "./Tasks.css";
@@ -212,8 +213,8 @@ function TaskDetail({ task, onBack, onRefresh }) {
         {/* Stepper */}
         <div className="tskd-stepper">
           {steps.map((s, i) => {
-            const done   = i < curIdx || (task.status === "completed" && i === curIdx);
-const active = i === curIdx && task.status !== "completed";
+            const done   = i < curIdx;
+            const active = i === curIdx;
             return (
               <div key={s} className="tskd-step">
                 <div className={`tskd-step-circle ${done ? "step-done" : active ? "step-active" : "step-idle"}`}>
@@ -389,6 +390,7 @@ export default function Tasks() {
   const [activeTab,    setActiveTab]    = useState("all");
   const [search,       setSearch]       = useState("");
   const [selectedTask, setSelectedTask] = useState(null);
+  const [monthFilter,  setMonthFilter]  = useState("All");
 
   const loadTasks = useCallback(async () => {
     setLoading(true);
@@ -403,12 +405,50 @@ export default function Tasks() {
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
+  /* Derive unique months from tasks (sorted newest first) */
+  const availableMonths = ["All", ...Array.from(new Set(
+    tasks
+      .map(t => {
+        const d = new Date(t.createdAt ?? t.updatedAt);
+        return isNaN(d) ? null : d.toLocaleString("en-IN", { month: "short", year: "numeric" });
+      })
+      .filter(Boolean)
+  )).sort((a, b) => new Date("1 " + b) - new Date("1 " + a))];
+
   const filtered = tasks.filter(t => {
     const tabOk    = activeTab === "all" || t.status === activeTab;
     const searchOk = !search || [t.order?.orderNumber, t.order?.customer?.name, t.order?.customer?.phone]
       .some(f => f?.toLowerCase().includes(search.toLowerCase()));
-    return tabOk && searchOk;
+    const monthOk  = monthFilter === "All" || (() => {
+      const d = new Date(t.createdAt ?? t.updatedAt);
+      return !isNaN(d) && d.toLocaleString("en-IN", { month: "short", year: "numeric" }) === monthFilter;
+    })();
+    return tabOk && searchOk && monthOk;
   });
+
+  /* XLSX export */
+  const exportXLSX = () => {
+    const rows = filtered.map(t => ({
+      "Order ID":        t.order?.orderNumber ?? t._id,
+      "Type":            t.taskType ?? "—",
+      "Status":          t.status   ?? "—",
+      "Customer Name":   t.order?.customer?.name  ?? "—",
+      "Customer Phone":  t.order?.customer?.phone ?? "—",
+      "Address":         t.order?.customer?.address ?? "—",
+      "Device Brand":    t.order?.deviceDetails?.brand ?? "—",
+      "Device Model":    t.order?.deviceDetails?.model ?? "—",
+      "Service Type":    t.order?.serviceType ?? "—",
+      "Price (₹)":       t.order?.price ?? "—",
+      "Scheduled Time":  t.scheduledTime ? new Date(t.scheduledTime).toLocaleString("en-IN") : "—",
+      "Completed At":    t.completedAt   ? new Date(t.completedAt).toLocaleString("en-IN")   : "—",
+      "Created At":      t.createdAt     ? new Date(t.createdAt).toLocaleString("en-IN")     : "—",
+    }));
+    const ws  = XLSX.utils.json_to_sheet(rows);
+    const wb  = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Tasks");
+    const fileName = `tasks_${monthFilter.replace(" ", "_")}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
 
   const tabCounts = TABS.reduce((acc, tab) => {
     acc[tab.key] = tab.key === "all" ? tasks.length : tasks.filter(t => t.status === tab.key).length;
@@ -438,10 +478,35 @@ export default function Tasks() {
           <h1 className="tsk-title">My Tasks</h1>
           <p className="tsk-subtitle">All your pickup and delivery assignments</p>
         </div>
-        <button className="tsk-refresh-btn" onClick={loadTasks} disabled={loading}>
-          <RefreshCw size={14} className={loading ? "tsk-spin" : ""} />
-          Refresh
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Month filter */}
+          <div className="tsk-month-wrap">
+            <Calendar size={13} className="tsk-month-icon" />
+            <select
+              className="tsk-month-select"
+              value={monthFilter}
+              onChange={e => setMonthFilter(e.target.value)}
+            >
+              {availableMonths.map(m => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
+          {/* Download XLSX */}
+          <button
+            className="tsk-download-btn"
+            onClick={exportXLSX}
+            disabled={filtered.length === 0}
+            title={`Download ${filtered.length} tasks as Excel`}
+          >
+            <Download size={14} />
+            Export
+          </button>
+          <button className="tsk-refresh-btn" onClick={loadTasks} disabled={loading}>
+            <RefreshCw size={14} className={loading ? "tsk-spin" : ""} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
