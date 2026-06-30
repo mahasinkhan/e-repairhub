@@ -1,10 +1,10 @@
-import mongoose, { Schema, type Document } from "mongoose";
+﻿import mongoose, { Schema, type Document } from "mongoose";
 
 export interface IFranchise extends Document {
   name: string;
   location: string;
   contact: string;
-  commissionPercent: number;
+  commissionAmount: number;
   isActive: boolean;
   owner?: mongoose.Types.ObjectId;
   coordinates?: { type: "Point"; coordinates: [number, number] }; // [lng, lat]
@@ -18,7 +18,7 @@ const franchiseSchema = new Schema<IFranchise>(
     name:               { type: String, required: true, trim: true },
     location:           { type: String, required: true, trim: true },
     contact:            { type: String, required: true, trim: true },
-    commissionPercent:  { type: Number, default: 0, min: 0, max: 100 },
+    commissionAmount:   { type: Number, default: 0, min: 0 },
     isActive:           { type: Boolean, default: true },
     owner:              { type: Schema.Types.ObjectId, ref: "User" },
     coordinates: {

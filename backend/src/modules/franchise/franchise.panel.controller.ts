@@ -1,4 +1,4 @@
-import type { Response, NextFunction } from "express";
+﻿import type { Response, NextFunction } from "express";
 import type { AuthedRequest } from "../auth/auth.middleware.js";
 import mongoose from "mongoose";
 import { Franchise } from "./franchise.model.js";
@@ -14,7 +14,7 @@ async function getFranchiseForUser(userId: string) {
   return Franchise.findOne({ owner: new mongoose.Types.ObjectId(userId) }).lean();
 }
 
-// ── Helper: send SMS via Twilio ───────────────────────────────────────────────
+// â”€â”€ Helper: send SMS via Twilio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function sendSms(phone: string, body: string): Promise<void> {
   const sid   = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
@@ -36,7 +36,7 @@ async function sendSms(phone: string, body: string): Promise<void> {
   }
 }
 
-// ── Profile ───────────────────────────────────────────────────────────────────
+// â”€â”€ Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getMyProfile(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -45,7 +45,7 @@ export async function getMyProfile(req: AuthedRequest, res: Response, next: Next
   } catch (e) { next(e); }
 }
 
-// ── Stats (with optional date range filter) ───────────────────────────────────
+// â”€â”€ Stats (with optional date range filter) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getMyStats(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -85,8 +85,8 @@ export async function getMyStats(req: AuthedRequest, res: Response, next: NextFu
 
     const totalOrders       = Object.values(counts).reduce((a, b) => a + b, 0);
     const totalRevenue      = revenueResult[0]?.total ?? 0;
-    const commissionPercent = (franchise as any).commissionPercent ?? 0;
-    const commission        = Math.round((totalRevenue * commissionPercent) / 100);
+    const commissionAmount = (franchise as any).commissionAmount ?? 0;
+    const commission        = Math.round((totalRevenue * commissionAmount) / 100);
 
     ok(res, {
       franchise,
@@ -98,13 +98,13 @@ export async function getMyStats(req: AuthedRequest, res: Response, next: NextFu
       cancelledOrders:  counts["cancelled"]  ?? 0,
       totalRevenue,
       commission,
-      commissionPercent,
+      commissionAmount,
       recentOrders,
     });
   } catch (e) { next(e); }
 }
 
-// ── Monthly stats for performance chart (last 12 months) ─────────────────────
+// â”€â”€ Monthly stats for performance chart (last 12 months) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getMyMonthlyStats(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -152,7 +152,7 @@ export async function getMyMonthlyStats(req: AuthedRequest, res: Response, next:
     const repairMap   = new Map(repairAgg.map(s   => [`${s._id.year}-${s._id.month}`, s.count]));
     const earningsMap = new Map(earningsAgg.map(s => [`${s._id.year}-${s._id.month}`, s.revenue]));
     const delivMap    = new Map(earningsAgg.map(s => [`${s._id.year}-${s._id.month}`, s.count]));
-    const commPct     = (franchise as any).commissionPercent ?? 0;
+    const commPct     = (franchise as any).commissionAmount ?? 0;
 
     const series = months.map(m => {
       const key     = `${m.year}-${m.month}`;
@@ -170,7 +170,7 @@ export async function getMyMonthlyStats(req: AuthedRequest, res: Response, next:
   } catch (e) { next(e); }
 }
 
-// ── Orders ────────────────────────────────────────────────────────────────────
+// â”€â”€ Orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getMyOrders(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -203,7 +203,7 @@ export async function getMyOrders(req: AuthedRequest, res: Response, next: NextF
   } catch (e) { next(e); }
 }
 
-// ── Order by ID ───────────────────────────────────────────────────────────────
+// â”€â”€ Order by ID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getMyOrderById(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -218,7 +218,7 @@ export async function getMyOrderById(req: AuthedRequest, res: Response, next: Ne
   } catch (e) { next(e); }
 }
 
-// ── Accept order ──────────────────────────────────────────────────────────────
+// â”€â”€ Accept order â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function acceptOrder(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -236,7 +236,7 @@ export async function acceptOrder(req: AuthedRequest, res: Response, next: NextF
   } catch (e) { next(e); }
 }
 
-// ── Reject order ──────────────────────────────────────────────────────────────
+// â”€â”€ Reject order â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function rejectOrder(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -257,7 +257,7 @@ export async function rejectOrder(req: AuthedRequest, res: Response, next: NextF
   } catch (e) { next(e); }
 }
 
-// ── Mark received ─────────────────────────────────────────────────────────────
+// â”€â”€ Mark received â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function markReceived(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -275,7 +275,7 @@ export async function markReceived(req: AuthedRequest, res: Response, next: Next
   } catch (e) { next(e); }
 }
 
-// ── Start repair ──────────────────────────────────────────────────────────────
+// â”€â”€ Start repair â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function startRepair(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -292,7 +292,7 @@ export async function startRepair(req: AuthedRequest, res: Response, next: NextF
   } catch (e) { next(e); }
 }
 
-// ── Complete repair ───────────────────────────────────────────────────────────
+// â”€â”€ Complete repair â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function completeRepair(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -315,17 +315,17 @@ export async function completeRepair(req: AuthedRequest, res: Response, next: Ne
       note:   notes?.trim() || undefined,
     });
     await order.save();
-    ok(res, order, "Repair completed — ready for delivery");
+    ok(res, order, "Repair completed â€” ready for delivery");
   } catch (e) { next(e); }
 }
 
-// ── Earnings ──────────────────────────────────────────────────────────────────
+// â”€â”€ Earnings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getMyEarnings(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
     if (!franchise) return fail(res, "No franchise linked", 404);
 
-    const commissionPercent = (franchise as any).commissionPercent ?? 0;
+    const commissionAmount = (franchise as any).commissionAmount ?? 0;
 
     const completedOrders = await Order.find({
       assignedFranchise: franchise._id,
@@ -339,7 +339,7 @@ export async function getMyEarnings(req: AuthedRequest, res: Response, next: Nex
       serviceType:   o.serviceType,
       deviceDetails: o.deviceDetails,
       price:         o.price,
-      commission:    Math.round((o.price * commissionPercent) / 100),
+      commission:    Math.round((o.price * commissionAmount) / 100),
       status:        o.status,
       createdAt:     o.createdAt,
     }));
@@ -348,8 +348,8 @@ export async function getMyEarnings(req: AuthedRequest, res: Response, next: Nex
     const totalCommission = orders.reduce((s, o) => s + o.commission, 0);
 
     ok(res, {
-      franchise:       { name: (franchise as any).name, commissionPercent },
-      commissionPercent,
+      franchise:       { name: (franchise as any).name, commissionAmount },
+      commissionAmount,
       totalRevenue,
       totalCommission,
       totalOrders:     orders.length,
@@ -358,7 +358,7 @@ export async function getMyEarnings(req: AuthedRequest, res: Response, next: Nex
   } catch (e) { next(e); }
 }
 
-// ── Delivery orders ───────────────────────────────────────────────────────────
+// â”€â”€ Delivery orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getMyDeliveryOrders(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -387,7 +387,7 @@ export async function getMyDeliveryOrders(req: AuthedRequest, res: Response, nex
   } catch (e) { next(e); }
 }
 
-// ── Reject repair ─────────────────────────────────────────────────────────────
+// â”€â”€ Reject repair â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function rejectRepair(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -415,7 +415,7 @@ export async function rejectRepair(req: AuthedRequest, res: Response, next: Next
   } catch (e) { next(e); }
 }
 
-// ── Request extra service ─────────────────────────────────────────────────────
+// â”€â”€ Request extra service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function requestExtraService(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const franchise = await getFranchiseForUser(req.userId!);
@@ -446,16 +446,16 @@ export async function requestExtraService(req: AuthedRequest, res: Response, nex
       status: "extra_service_requested",
       by:     "franchise",
       time:   new Date(),
-      note:   `Extra service requested: ${name.trim()} — ₹${price}. Reason: ${reason.trim()}`,
+      note:   `Extra service requested: ${name.trim()} â€” â‚¹${price}. Reason: ${reason.trim()}`,
     });
 
     await order.save();
 
     await sendSms(
       order.customer.phone,
-      `E-RepairHub: Additional service needed for your ${order.deviceDetails?.brand} ${order.deviceDetails?.model} (${order.orderNumber}). Service: ${name.trim()}, Cost: ₹${price}. Reason: ${reason.trim()}. Approve/reject at: http://localhost:5176/track?orderNumber=${order.orderNumber}`
+      `E-RepairHub: Additional service needed for your ${order.deviceDetails?.brand} ${order.deviceDetails?.model} (${order.orderNumber}). Service: ${name.trim()}, Cost: â‚¹${price}. Reason: ${reason.trim()}. Approve/reject at: http://localhost:5176/track?orderNumber=${order.orderNumber}`
     );
 
-    ok(res, order, "Extra service requested — customer notified via SMS");
+    ok(res, order, "Extra service requested â€” customer notified via SMS");
   } catch (e) { next(e); }
 }

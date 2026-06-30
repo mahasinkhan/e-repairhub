@@ -1,20 +1,20 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, RefreshCw, Store } from "lucide-react";
 import { toast } from "sonner";
 import { useFranchiseStore } from "../../features/franchise/franchise.store.js";
 
 const MOCK_FRANCHISES = [
-  { _id: "mock_f1", isMock: true, name: "Delhi Central", location: "Connaught Place, Delhi", contact: "9876543210", commissionPercent: 15, isActive: true },
-  { _id: "mock_f2", isMock: true, name: "Mumbai West", location: "Bandra, Mumbai", contact: "9876543211", commissionPercent: 12, isActive: true },
-  { _id: "mock_f3", isMock: true, name: "Bangalore Tech", location: "Koramangala, Bangalore", contact: "9876543212", commissionPercent: 14, isActive: false },
-  { _id: "mock_f4", isMock: true, name: "Chennai Hub", location: "T. Nagar, Chennai", contact: "9876543213", commissionPercent: 13, isActive: true },
+  { _id: "mock_f1", isMock: true, name: "Delhi Central", location: "Connaught Place, Delhi", contact: "9876543210", commissionAmount: 15, isActive: true },
+  { _id: "mock_f2", isMock: true, name: "Mumbai West", location: "Bandra, Mumbai", contact: "9876543211", commissionAmount: 12, isActive: true },
+  { _id: "mock_f3", isMock: true, name: "Bangalore Tech", location: "Koramangala, Bangalore", contact: "9876543212", commissionAmount: 14, isActive: false },
+  { _id: "mock_f4", isMock: true, name: "Chennai Hub", location: "T. Nagar, Chennai", contact: "9876543213", commissionAmount: 13, isActive: true },
 ];
 
 const EMPTY_FORM = {
   name: "",
   location: "",
   contact: "",
-  commissionPercent: "",
+  commissionAmount: "",
   isActive: true,
 };
 
@@ -41,14 +41,14 @@ export default function Franchise() {
 
   const openEdit = (franchise) => {
     if (franchise.isMock) {
-      toast.info("Sample data — add a real franchise first.");
+      toast.info("Sample data â€” add a real franchise first.");
       return;
     }
     setForm({
       name: franchise.name ?? "",
       location: franchise.location ?? "",
       contact: franchise.contact ?? "",
-      commissionPercent: franchise.commissionPercent ?? "",
+      commissionAmount: franchise.commissionAmount ?? "",
       isActive: franchise.isActive ?? true,
     });
     setEditingId(franchise._id);
@@ -91,7 +91,7 @@ export default function Franchise() {
 
   const handleToggle = async (franchise) => {
     if (franchise.isMock) {
-      toast.info("Sample data — add a real franchise to toggle status.");
+      toast.info("Sample data â€” add a real franchise to toggle status.");
       return;
     }
     try {
@@ -167,7 +167,7 @@ export default function Franchise() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  {["Franchise Name", "Location", "Contact", "Commission %", "Status", "Actions"].map((h) => (
+                  {["Franchise Name", "Location", "Contact", "Commission", "Status", "Actions"].map((h) => (
                     <th key={h} className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
@@ -190,10 +190,10 @@ export default function Franchise() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-slate-600">{franchise.location ?? "—"}</td>
-                    <td className="px-5 py-4 text-slate-600">{franchise.contact ?? "—"}</td>
+                    <td className="px-5 py-4 text-slate-600">{franchise.location ?? "â€”"}</td>
+                    <td className="px-5 py-4 text-slate-600">{franchise.contact ?? "â€”"}</td>
                     <td className="px-5 py-4">
-                      <span className="font-semibold text-slate-800">{franchise.commissionPercent ?? "—"}%</span>
+                      <span className="font-semibold text-slate-800">{franchise.commissionAmount != null ? `₹${franchise.commissionAmount}` : "—"}</span>
                     </td>
                     <td className="px-5 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -243,7 +243,7 @@ export default function Franchise() {
               <p className="text-xs text-slate-400">
                 {franchises.length > 0
                   ? `${franchises.length} franchise${franchises.length !== 1 ? "s" : ""}`
-                  : <span>Showing sample data — <button onClick={openAdd} className="text-orange-500 hover:underline">add a real franchise</button></span>
+                  : <span>Showing sample data â€” <button onClick={openAdd} className="text-orange-500 hover:underline">add a real franchise</button></span>
                 }
               </p>
             </div>
@@ -259,7 +259,7 @@ export default function Franchise() {
               <h3 className="font-semibold text-slate-800">
                 {editingId ? "Edit Franchise" : "Add Franchise"}
               </h3>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 text-xl leading-none">âœ•</button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -297,15 +297,14 @@ export default function Franchise() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Commission %</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">Commission Amount (₹)</label>
                 <input
-                  name="commissionPercent"
+                  name="commissionAmount"
                   type="number"
                   min="0"
-                  max="100"
-                  value={form.commissionPercent}
+                  value={form.commissionAmount}
                   onChange={handleChange}
-                  placeholder="e.g. 15"
+                  placeholder="e.g. 500"
                   className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 transition"
                 />
               </div>
@@ -345,3 +344,7 @@ export default function Franchise() {
     </div>
   );
 }
+
+
+
+

@@ -1,4 +1,4 @@
-import { Router, type Request, type Response, type NextFunction } from "express";
+﻿import { Router, type Request, type Response, type NextFunction } from "express";
 import { verifyToken, requireRoles } from "../auth/auth.middleware.js";
 import {
   listFranchises, getFranchiseById, createFranchise, updateFranchise,
@@ -21,7 +21,7 @@ franchiseRouter.get("/active", async (_req, res, next) => {
   catch (e) { next(e); }
 });
 
-// ── NEARBY — sorted by distance to customer ───────────────────────────────────
+// â”€â”€ NEARBY â€” sorted by distance to customer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 franchiseRouter.get("/nearby", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { lat, lng, maxKm, address } = req.query;
@@ -46,7 +46,7 @@ franchiseRouter.get("/nearby", async (req: Request, res: Response, next: NextFun
   } catch (e) { next(e); }
 });
 
-// ── Geocode franchise address ─────────────────────────────────────────────────
+// â”€â”€ Geocode franchise address â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 franchiseRouter.post("/geocode/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const franchise = await Franchise.findById(req.params.id).lean();
@@ -72,19 +72,19 @@ franchiseRouter.get("/:id", async (req, res, next) => {
 
 franchiseRouter.post("/", async (req, res, next) => {
   try {
-    const { name, location, contact, commissionPercent, isActive } = req.body;
+    const { name, location, contact, commissionAmount, isActive } = req.body;
     if (!name?.trim())     { res.status(400).json({ success: false, message: "Name is required" }); return; }
     if (!location?.trim()) { res.status(400).json({ success: false, message: "Location is required" }); return; }
     if (!contact?.trim())  { res.status(400).json({ success: false, message: "Contact is required" }); return; }
-    const franchise = await createFranchise({ name, location, contact, commissionPercent, isActive });
+    const franchise = await createFranchise({ name, location, contact, commissionAmount, isActive });
     res.status(201).json({ success: true, data: franchise, message: "Franchise created" });
   } catch (e) { next(e); }
 });
 
 franchiseRouter.put("/:id", async (req, res, next) => {
   try {
-    const { name, location, contact, commissionPercent, isActive } = req.body;
-    const franchise = await updateFranchise(req.params.id, { name, location, contact, commissionPercent, isActive });
+    const { name, location, contact, commissionAmount, isActive } = req.body;
+    const franchise = await updateFranchise(req.params.id, { name, location, contact, commissionAmount, isActive });
     res.json({ success: true, data: franchise, message: "Franchise updated" });
   } catch (e) { next(e); }
 });

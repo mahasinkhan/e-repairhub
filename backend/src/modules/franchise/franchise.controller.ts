@@ -1,4 +1,4 @@
-import type { Response, NextFunction } from "express";
+﻿import type { Response, NextFunction } from "express";
 import type { AuthedRequest } from "../auth/auth.middleware.js";
 import mongoose from "mongoose";
 import { Franchise } from "./franchise.model.js";
@@ -52,8 +52,8 @@ export async function getMyStats(req: AuthedRequest, res: Response, next: NextFu
 
     const totalOrders = Object.values(counts).reduce((a, b) => a + b, 0);
     const totalRevenue = revenueResult[0]?.total ?? 0;
-    const commissionPercent = (franchise as any).commissionPercent ?? 0;
-    const commission = Math.round((totalRevenue * commissionPercent) / 100);
+    const commissionAmount = (franchise as any).commissionAmount ?? 0;
+    const commission = Math.round((totalRevenue * commissionAmount) / 100);
 
     ok(res, {
       franchise,
@@ -65,7 +65,7 @@ export async function getMyStats(req: AuthedRequest, res: Response, next: NextFu
       cancelledOrders: counts["cancelled"] ?? 0,
       totalRevenue,
       commission,
-      commissionPercent,
+      commissionAmount,
       recentOrders,
     });
   } catch (e) { next(e); }
@@ -196,7 +196,7 @@ export async function getMyEarnings(req: AuthedRequest, res: Response, next: Nex
     const franchise = await getFranchiseForUser(req.userId!);
     if (!franchise) return fail(res, "No franchise linked", 404);
 
-    const commissionPercent = (franchise as any).commissionPercent ?? 0;
+    const commissionAmount = (franchise as any).commissionAmount ?? 0;
 
     const completedOrders = await Order.find({
       assignedFranchise: franchise._id,
@@ -209,7 +209,7 @@ export async function getMyEarnings(req: AuthedRequest, res: Response, next: Nex
       customer: o.customer,
       serviceType: o.serviceType,
       price: o.price,
-      commission: Math.round((o.price * commissionPercent) / 100),
+      commission: Math.round((o.price * commissionAmount) / 100),
       status: o.status,
       createdAt: o.createdAt,
     }));
@@ -218,7 +218,7 @@ export async function getMyEarnings(req: AuthedRequest, res: Response, next: Nex
     const totalCommission = orders.reduce((s, o) => s + o.commission, 0);
 
     ok(res, {
-      commissionPercent,
+      commissionAmount,
       totalRevenue,
       totalCommission,
       totalOrders: orders.length,

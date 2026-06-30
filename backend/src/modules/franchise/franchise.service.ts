@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 import { Franchise } from "./franchise.model.js";
 import { geocodeAddress, haversineKm } from "../../shared/utils/geocode.js";
 import type { CreateFranchiseDto, UpdateFranchiseDto } from "./franchise.types.js";
@@ -75,7 +75,7 @@ type FranchiseWithDistance = {
   name: string;
   location: string;
   contact: string;
-  commissionPercent: number;
+  commissionAmount: number;
   isActive: boolean;
   owner?: mongoose.Types.ObjectId;
   coordinates?: { type: "Point"; coordinates: [number, number] };
@@ -103,7 +103,7 @@ export async function getNearbyFranchises(
       name:             f.name,
       location:         f.location,
       contact:          f.contact,
-      commissionPercent: f.commissionPercent,
+      commissionAmount: f.commissionAmount,
       isActive:         f.isActive,
       owner:            f.owner,
       coordinates:      f.coordinates as { type: "Point"; coordinates: [number, number] } | undefined,
