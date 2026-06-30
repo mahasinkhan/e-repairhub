@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import Model from './model.model.js';
 import Service from './service.model.js';
 import Variant from './variant.model.js';
@@ -7,7 +7,7 @@ import Pricing from './pricing.model.js';
 import Brand from './brand.model.js';
 import Series from './series.model.js';
 
-// ─── BRAND ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ BRAND â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const createBrand = async (req: Request, res: Response) => {
   try {
@@ -82,13 +82,14 @@ export const toggleBrandStatus = async (req: Request, res: Response) => {
   }
 };
 
-// ─── MODEL ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ MODEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const createModel = async (req: Request, res: Response) => {
   try {
-    const { name, brand, deviceType, series, status } = req.body;
+    const { name, brand, deviceType, series, status, colors } = req.body;
     const image = req.file ? `/uploads/models/${req.file.filename}` : undefined;
-    const model = await Model.create({ name, brand, deviceType, series: series?.trim() ?? '', status, image });
+    const parsedColors = typeof colors === "string" ? JSON.parse(colors || "[]") : (colors ?? []);
+    const model = await Model.create({ name, brand, deviceType, series: series?.trim() ?? '', status, image, colors: parsedColors });
     res.status(201).json(model);
   } catch (err: any) {
     res.status(400).json({ message: err.message });
@@ -116,9 +117,10 @@ export const getModels = async (req: Request, res: Response) => {
 
 export const updateModel = async (req: Request, res: Response) => {
   try {
-    const { name, brand, deviceType, series, status } = req.body;
+    const { name, brand, deviceType, series, status, colors } = req.body;
     const image = req.file ? `/uploads/models/${req.file.filename}` : undefined;
     const update: any = { name, brand, deviceType, series: series?.trim() ?? '', status };
+    if (colors !== undefined) update.colors = typeof colors === "string" ? JSON.parse(colors || "[]") : colors;
     if (image) update.image = image;
     const model = await Model.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!model) return res.status(404).json({ message: 'Model not found' });
@@ -152,7 +154,7 @@ export const toggleModelStatus = async (req: Request, res: Response) => {
   }
 };
 
-// ─── SERVICE ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ SERVICE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const createService = async (req: Request, res: Response) => {
   try {
@@ -181,11 +183,11 @@ export const getServices = async (req: Request, res: Response) => {
 
     const total = await Service.countDocuments(query);
 
-    // ── Join Pricing data for each service ───────────────────────────────────
+    // â”€â”€ Join Pricing data for each service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const serviceIds  = services.map(s => s._id);
     const modelId     = model ? model : undefined;
 
-    // Build query for pricing — if model is specified, match both
+    // Build query for pricing â€” if model is specified, match both
     const pricingQuery: any = { service: { $in: serviceIds } };
     if (modelId) pricingQuery.model = modelId;
 
@@ -256,7 +258,7 @@ export const toggleServiceStatus = async (req: Request, res: Response) => {
   }
 };
 
-// ─── VARIANT ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ VARIANT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const createVariant = async (req: Request, res: Response) => {
   try {
@@ -317,7 +319,7 @@ export const toggleVariantStatus = async (req: Request, res: Response) => {
   }
 };
 
-// ─── DEVICE IMAGE ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ DEVICE IMAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const createDeviceImage = async (req: Request, res: Response) => {
   try {
@@ -353,7 +355,7 @@ export const deleteDeviceImage = async (req: Request, res: Response) => {
   }
 };
 
-// ─── PRICING ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ PRICING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const createPricing = async (req: Request, res: Response) => {
   try {
@@ -402,7 +404,7 @@ export const deletePricing = async (req: Request, res: Response) => {
   }
 };
 
-// ─── SERIES ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ SERIES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const createSeries = async (req: Request, res: Response) => {
   try {

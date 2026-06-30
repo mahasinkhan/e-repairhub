@@ -4,13 +4,14 @@ import {
   Smartphone, Package, Wrench, X, ToggleLeft, ToggleRight,
   ImageIcon, Clock, IndianRupee, Layers, Tag, ChevronDown,
   ChevronUp, Zap, TrendingUp, Grid3X3, List, Star, AlertCircle,
-  CheckCircle2, Circle, Hash, AlertTriangle, Download,
+  CheckCircle2, Circle, Hash, AlertTriangle, Download, Info, Calculator,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getBrands, createBrand, updateBrand, deleteBrand, toggleBrandStatus,
   getModels, createModel, updateModel, deleteModel, toggleModelStatus,
   getServices, createService, updateService, deleteService, toggleServiceStatus,
+  getPricing, createPricing, updatePricing, deletePricing,
 } from "../../features/catalog/catalog.api.js";
 import { exportToExcel } from "../../utils/exportToExcel.js";
 
@@ -270,15 +271,19 @@ function ModelModal({ open, model, brandId, brandName, onClose, onSuccess }) {
   const [preview, setPreview]     = useState(null);
   const [saving, setSaving]       = useState(false);
   const [showSeries, setShowSeries] = useState(false);
+  const [colors, setColors]       = useState([]);
+  const [colorInput, setColorInput] = useState("");
   const fileRef = useRef();
   const suggestions = BRAND_SERIES[brandName?.toLowerCase()] ?? [];
 
   useEffect(() => {
     if (model) {
       setForm({ name: model.name ?? "", series: model.series ?? "", deviceType: model.deviceType ?? "Smartphone", status: model.status ?? "active" });
+      setColors(Array.isArray(model.colors) ? model.colors : []);
       setPreview(imgURL(model.image));
     } else {
       setForm({ name: "", series: "", deviceType: "Smartphone", status: "active" });
+      setColors([]);
       setPreview(null);
     }
     setImageFile(null);
@@ -297,6 +302,7 @@ function ModelModal({ open, model, brandId, brandName, onClose, onSuccess }) {
       const fd = new FormData();
       fd.append("name", form.name.trim()); fd.append("brand", brandId);
       fd.append("series", form.series.trim()); fd.append("deviceType", form.deviceType); fd.append("status", form.status);
+      fd.append("colors", JSON.stringify(colors));
       if (imageFile) fd.append("image", imageFile);
       model ? await updateModel(model._id, fd) : await createModel(fd);
       toast.success(model ? "Model updated!" : "Model created!");
@@ -350,6 +356,32 @@ function ModelModal({ open, model, brandId, brandName, onClose, onSuccess }) {
           )}
         </div>
 
+        {/* Available Colors */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5 flex items-center gap-1.5">
+            <Tag className="w-3.5 h-3.5 text-slate-400" /> Available Colors <span className="text-slate-400 font-normal">(optional)</span>
+          </label>
+          <div className="flex gap-2">
+            <input value={colorInput} onChange={e => setColorInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); const v = colorInput.trim(); if (v && !colors.some(c => c.toLowerCase() === v.toLowerCase())) setColors(prev => [...prev, v]); setColorInput(""); } }}
+              placeholder="e.g. Midnight Black — press Enter"
+              className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400 transition" />
+            <button type="button" onClick={() => { const v = colorInput.trim(); if (v && !colors.some(c => c.toLowerCase() === v.toLowerCase())) setColors(prev => [...prev, v]); setColorInput(""); }}
+              className="px-3.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition flex items-center justify-center"><Plus className="w-4 h-4" /></button>
+          </div>
+          {colors.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5 mt-2.5">
+              {colors.map((c, i) => (
+                <span key={i} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">{c}
+                  <button type="button" onClick={() => setColors(prev => prev.filter((_, idx) => idx !== i))} className="w-4 h-4 rounded-full bg-blue-200 hover:bg-blue-300 text-blue-700 flex items-center justify-center transition"><X className="w-2.5 h-2.5" /></button>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[10px] text-slate-400 mt-1.5">No colors added yet. Type a color name and press Enter.</p>
+          )}
+        </div>
+
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1.5">Status</label>
           <div className="flex gap-2">
@@ -367,7 +399,15 @@ function ModelModal({ open, model, brandId, brandName, onClose, onSuccess }) {
   );
 }
 
-// ─── SERVICE MODAL ────────────────────────────────────────────────────────────
+// ─── SERVICE + PRICING MODAL (merged) ─────────────────────────────────────────
+function calcFinal(p) {
+  const base     = Number(p.basePrice)    || 0;
+  const pickup   = Number(p.pickupCharge) || 0;
+  const urgent   = Number(p.urgentCharge) || 0;
+  const discount = Number(p.discount)     || 0;
+  return base + pickup + urgent - discount;
+}
+
 function ServiceModal({ open, service, modelId, modelName, onClose, onSuccess }) {
   const [form, setForm]           = useState({ name: "", description: "", estimatedTime: "", price: "", status: "active" });
   const [imageFile, setImageFile] = useState(null);
@@ -375,44 +415,124 @@ function ServiceModal({ open, service, modelId, modelName, onClose, onSuccess })
   const [saving, setSaving]       = useState(false);
   const fileRef = useRef();
 
+  // Pricing sub-state (lives in the same modal)
+  const [enablePricing, setEnablePricing] = useState(false);
+  const [existingPricing, setExistingPricing] = useState(null); // pricing doc if one exists
+  const [pricingLoading, setPricingLoading]   = useState(false);
+  const [pForm, setPForm] = useState({ basePrice: "", pickupCharge: "0", urgentCharge: "0", discount: "0" });
+
+  // Load service base fields + any existing pricing rule
   useEffect(() => {
+    if (!open) return;
+
     if (service) {
       const editablePrice = service.catalogPrice ?? service.price ?? "";
-      setForm({ name: service.name ?? "", description: service.description ?? "", estimatedTime: service.estimatedTime ?? "", price: editablePrice, status: service.status ?? "active" });
+      setForm({
+        name: service.name ?? "",
+        description: service.description ?? "",
+        estimatedTime: service.estimatedTime ?? "",
+        price: editablePrice,
+        status: service.status ?? "active",
+      });
       setPreview(imgURL(service.image));
+
+      // fetch pricing for this service
+      setPricingLoading(true);
+      getPricing({ model: modelId, service: service._id, limit: 1 })
+        .then((r) => {
+          const list = r?.data ?? [];
+          const match = list.find((x) => String(x.service?._id || x.service) === String(service._id)) || list[0] || null;
+          if (match) {
+            setExistingPricing(match);
+            setEnablePricing(true);
+            setPForm({
+              basePrice:    match.basePrice    ?? "",
+              pickupCharge: match.pickupCharge ?? "0",
+              urgentCharge: match.urgentCharge ?? "0",
+              discount:     match.discount     ?? "0",
+            });
+          } else {
+            setExistingPricing(null);
+            setEnablePricing(false);
+            setPForm({ basePrice: editablePrice ? String(editablePrice) : "", pickupCharge: "0", urgentCharge: "0", discount: "0" });
+          }
+        })
+        .catch(() => {
+          setExistingPricing(null);
+          setEnablePricing(false);
+        })
+        .finally(() => setPricingLoading(false));
     } else {
       setForm({ name: "", description: "", estimatedTime: "", price: "", status: "active" });
       setPreview(null);
+      setExistingPricing(null);
+      setEnablePricing(false);
+      setPForm({ basePrice: "", pickupCharge: "0", urgentCharge: "0", discount: "0" });
     }
     setImageFile(null);
-  }, [service, open]);
+  }, [service, open, modelId]);
 
   if (!open) return null;
 
   const handleFile = e => { const f = e.target.files[0]; if (!f) return; setImageFile(f); setPreview(URL.createObjectURL(f)); };
 
+  const finalPrice = calcFinal(pForm);
+  const catalogPrice = Number(form.price) || 0;
+
   const handleSubmit = async e => {
     e.preventDefault();
     if (!modelId) return toast.error("Please select a model first");
     if (!form.name.trim()) return toast.error("Service name is required");
-    if (!form.price) return toast.error("Base price is required");
+    if (!form.price) return toast.error("Base / fallback price is required");
+    if (enablePricing) {
+      if (!pForm.basePrice) return toast.error("Pricing base price is required");
+      if (finalPrice < 0) return toast.error("Final price cannot be negative");
+    }
     setSaving(true);
     try {
+      // 1. Save the service itself
       const fd = new FormData();
       fd.append("name", form.name.trim()); fd.append("description", form.description.trim());
       fd.append("estimatedTime", form.estimatedTime.trim()); fd.append("price", form.price);
       fd.append("status", form.status); fd.append("model", modelId);
       if (imageFile) fd.append("image", imageFile);
-      service ? await updateService(service._id, fd) : await createService(fd);
+
+      const saved = service ? await updateService(service._id, fd) : await createService(fd);
+
+      // The created/updated service id (handles both {data:{_id}} and {_id} shapes)
+      const savedServiceId = service?._id || saved?.data?._id || saved?._id;
+
+      // 2. Save/Update/Remove the pricing rule
+      if (enablePricing && savedServiceId) {
+        const body = {
+          model: modelId,
+          service: savedServiceId,
+          basePrice:    Number(pForm.basePrice),
+          pickupCharge: Number(pForm.pickupCharge) || 0,
+          urgentCharge: Number(pForm.urgentCharge) || 0,
+          discount:     Number(pForm.discount)     || 0,
+          finalPrice,
+        };
+        if (existingPricing?._id) {
+          await updatePricing(existingPricing._id, body);
+        } else {
+          await createPricing(body);
+        }
+      } else if (!enablePricing && existingPricing?._id) {
+        // user turned pricing off → remove the rule (falls back to catalog price)
+        await deletePricing(existingPricing._id);
+      }
+
       toast.success(service ? "Service updated!" : "Service created!");
       onSuccess(); onClose();
-    } catch (err) { toast.error(err?.response?.data?.message || err.message); }
-    finally { setSaving(false); }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err.message);
+    } finally { setSaving(false); }
   };
 
   return (
-    <ModalShell title={service ? "Edit Service" : "New Service"} subtitle={modelName ? `For ${modelName}` : "Select a model first"} onClose={onClose} accentClass="from-green-500 to-emerald-500">
-      <form onSubmit={handleSubmit} className="p-6 space-y-4">
+    <ModalShell title={service ? "Edit Service" : "New Service"} subtitle={modelName ? `For ${modelName}` : "Select a model first"} onClose={onClose} accentClass="from-green-500 to-emerald-500" wide>
+      <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
         <div className="flex items-start gap-4">
           <div onClick={() => fileRef.current?.click()}
             className="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-dashed border-green-200 flex items-center justify-center overflow-hidden cursor-pointer hover:border-green-400 transition group flex-shrink-0">
@@ -439,7 +559,7 @@ function ServiceModal({ open, service, modelId, modelName, onClose, onSuccess })
             </label>
             <input type="number" min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="1500"
               className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-400/40 focus:border-green-400 transition" />
-            <p className="text-[10px] text-slate-400 mt-1">Used if no pricing rule is set. Go to Pricing page to set final price.</p>
+            <p className="text-[10px] text-slate-400 mt-1">Used if no detailed pricing is set below.</p>
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5 flex items-center gap-1"><Clock className="w-3 h-3" /> Est. Time</label>
@@ -448,11 +568,100 @@ function ServiceModal({ open, service, modelId, modelName, onClose, onSuccess })
           </div>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-2">
-          <AlertTriangle className="w-3.5 h-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
-          <p className="text-[11px] text-blue-700 leading-relaxed">
-            <strong>Tip:</strong> The price here is a fallback. To set the final customer price with pickup/urgent/discount charges, go to the <strong>Pricing</strong> page.
-          </p>
+        {/* ── PRICING SECTION ── */}
+        <div className="border border-slate-200 rounded-2xl overflow-hidden">
+          <button type="button" onClick={() => setEnablePricing(v => !v)}
+            className={`w-full flex items-center justify-between px-4 py-3 transition ${enablePricing ? "bg-emerald-50" : "bg-slate-50 hover:bg-slate-100"}`}>
+            <div className="flex items-center gap-2.5">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${enablePricing ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500"}`}>
+                <Calculator className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-slate-700">Detailed Pricing {existingPricing && <span className="text-[10px] font-semibold text-emerald-600 ml-1">• rule exists</span>}</p>
+                <p className="text-[11px] text-slate-400">Set final customer price with pickup / urgent / discount</p>
+              </div>
+            </div>
+            <div className={`w-11 h-6 rounded-full p-0.5 transition ${enablePricing ? "bg-emerald-500" : "bg-slate-300"}`}>
+              <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${enablePricing ? "translate-x-5" : "translate-x-0"}`} />
+            </div>
+          </button>
+
+          {enablePricing && (
+            <div className="p-4 space-y-4 bg-white">
+              {pricingLoading ? (
+                <div className="flex items-center justify-center py-6 text-slate-400 text-sm">
+                  <RefreshCw className="w-4 h-4 animate-spin mr-2" /> Loading pricing…
+                </div>
+              ) : (
+                <>
+                  {/* Final price display */}
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 text-center">
+                    <p className="text-xs text-green-600 font-medium mb-1">Final Customer Price</p>
+                    <p className={`text-3xl font-bold ${finalPrice < 0 ? "text-red-500" : "text-green-700"}`}>
+                      ₹{finalPrice.toLocaleString("en-IN")}
+                    </p>
+                    <p className="text-xs text-green-500 mt-1">base + pickup + urgent − discount</p>
+                    {catalogPrice > 0 && finalPrice !== catalogPrice && (
+                      <p className="text-[11px] text-green-600 mt-1 font-semibold">
+                        {finalPrice > catalogPrice
+                          ? `▲ ₹${(finalPrice - catalogPrice).toLocaleString("en-IN")} above fallback`
+                          : `▼ ₹${(catalogPrice - finalPrice).toLocaleString("en-IN")} below fallback`}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Base Price (₹) *</label>
+                      <input type="number" min="0" value={pForm.basePrice}
+                        onChange={e => setPForm(f => ({ ...f, basePrice: e.target.value }))} placeholder="e.g. 1500"
+                        className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Pickup Charge (₹)</label>
+                      <input type="number" min="0" value={pForm.pickupCharge}
+                        onChange={e => setPForm(f => ({ ...f, pickupCharge: e.target.value }))} placeholder="e.g. 100"
+                        className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Urgent Charge (₹)</label>
+                      <input type="number" min="0" value={pForm.urgentCharge}
+                        onChange={e => setPForm(f => ({ ...f, urgentCharge: e.target.value }))} placeholder="e.g. 200"
+                        className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 transition" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Discount (₹)</label>
+                      <input type="number" min="0" value={pForm.discount}
+                        onChange={e => setPForm(f => ({ ...f, discount: e.target.value }))} placeholder="e.g. 50"
+                        className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition" />
+                    </div>
+                  </div>
+
+                  {/* Breakdown */}
+                  <div className="bg-slate-50 rounded-lg p-3 space-y-1.5 text-xs">
+                    <div className="flex justify-between text-slate-600"><span>Base price</span><span>₹{Number(pForm.basePrice || 0).toLocaleString("en-IN")}</span></div>
+                    {Number(pForm.pickupCharge) > 0 && <div className="flex justify-between text-blue-600"><span>+ Pickup charge</span><span>₹{Number(pForm.pickupCharge).toLocaleString("en-IN")}</span></div>}
+                    {Number(pForm.urgentCharge) > 0 && <div className="flex justify-between text-orange-600"><span>+ Urgent charge</span><span>₹{Number(pForm.urgentCharge).toLocaleString("en-IN")}</span></div>}
+                    {Number(pForm.discount)     > 0 && <div className="flex justify-between text-red-600"><span>− Discount</span><span>₹{Number(pForm.discount).toLocaleString("en-IN")}</span></div>}
+                    <div className="flex justify-between font-semibold text-green-700 border-t border-slate-200 pt-1.5 mt-1.5">
+                      <span>Final price (shown to customers)</span>
+                      <span>₹{finalPrice.toLocaleString("en-IN")}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {!enablePricing && (
+            <div className="px-4 py-3 bg-amber-50 border-t border-amber-100 flex items-start gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-[11px] text-amber-700 leading-relaxed">
+                Pricing is off — customers will see the <strong>base / fallback price</strong> above. Turn this on to set a detailed final price.
+                {existingPricing && <span className="block mt-0.5 font-semibold">Saving with this off will remove the existing pricing rule.</span>}
+              </p>
+            </div>
+          )}
         </div>
 
         <div>
@@ -473,10 +682,10 @@ function ServiceModal({ open, service, modelId, modelName, onClose, onSuccess })
 }
 
 // ─── Shared modal shell ───────────────────────────────────────────────────────
-function ModalShell({ title, subtitle, onClose, accentClass, children }) {
+function ModalShell({ title, subtitle, onClose, accentClass, children, wide }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className={`bg-white rounded-3xl shadow-2xl w-full ${wide ? "max-w-lg" : "max-w-md"} overflow-hidden animate-in fade-in zoom-in-95 duration-200`}>
         <div className={`h-1.5 w-full bg-gradient-to-r ${accentClass}`} />
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div>
@@ -638,11 +847,27 @@ export default function Catalog() {
     catch { toast.error("Failed to load models"); } finally { setModelLoading(false); }
   }, [selectedBrand, modelSearch]);
 
+  // Services + merge pricing into each service for badge display
   const loadServices = useCallback(async () => {
     if (!selectedModel) { setServices([]); return; }
     setServiceLoading(true);
-    try { const r = await getServices({ model: selectedModel._id, search: serviceSearch, limit: 200 }); setServices(r.data ?? []); }
-    catch { toast.error("Failed to load services"); } finally { setServiceLoading(false); }
+    try {
+      const [svcRes, priceRes] = await Promise.all([
+        getServices({ model: selectedModel._id, search: serviceSearch, limit: 200 }),
+        getPricing({ model: selectedModel._id, limit: 200 }),
+      ]);
+      const svcs   = svcRes.data ?? [];
+      const prices = priceRes.data ?? [];
+      const map = {};
+      prices.forEach((p) => {
+        const sid = p.service?._id || p.service;
+        if (sid) map[String(sid)] = p;
+      });
+      const merged = svcs.map((s) => ({ ...s, pricing: map[String(s._id)] || s.pricing || null }));
+      setServices(merged);
+    } catch {
+      toast.error("Failed to load services");
+    } finally { setServiceLoading(false); }
   }, [selectedModel, serviceSearch]);
 
   useEffect(() => { loadBrands(); }, [loadBrands]);
@@ -763,7 +988,7 @@ export default function Catalog() {
       <div className="flex items-start justify-between flex-wrap gap-3 flex-shrink-0">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Catalog Management</h2>
-          <p className="text-slate-500 text-sm mt-0.5">Brands → Series → Models → Repair Services</p>
+          <p className="text-slate-500 text-sm mt-0.5">Brands → Series → Models → Repair Services → Pricing</p>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
@@ -880,7 +1105,7 @@ export default function Catalog() {
         {/* ── SERVICES ── */}
         <div className={`bg-white/80 backdrop-blur border rounded-2xl shadow-sm flex flex-col overflow-hidden transition-all duration-200 ${selectedModel ? "border-green-200 ring-2 ring-green-100/80" : "border-slate-200"}`}>
           <PanelHeader icon={Wrench} color="green"
-            title="Services" count={selectedModel ? `${services.length} for ${selectedModel.name}` : "Select a model"}
+            title="Services & Pricing" count={selectedModel ? `${services.length} for ${selectedModel.name}` : "Select a model"}
             onAdd={() => { if (!selectedModel) return toast.error("Select a model first"); setServiceModal({ open: true, service: null }); }} />
           <div className="px-3 py-2.5 border-b border-slate-100 flex-shrink-0 bg-slate-50/50">
             <SearchBox value={serviceSearch} onChange={setServiceSearch} placeholder={selectedModel ? "Search services…" : "Select a model first"} disabled={!selectedModel} color="green" />
@@ -891,7 +1116,7 @@ export default function Catalog() {
             <div className="mx-3 mt-2.5 flex-shrink-0 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-center gap-2">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
               <p className="text-[11px] text-amber-700 font-medium">
-                {unpricedServices} service{unpricedServices > 1 ? "s" : ""} using fallback catalog price. Set pricing in the <strong>Pricing</strong> page.
+                {unpricedServices} service{unpricedServices > 1 ? "s" : ""} using fallback price. Click <strong>Edit</strong> on a service and turn on <strong>Detailed Pricing</strong>.
               </p>
             </div>
           )}

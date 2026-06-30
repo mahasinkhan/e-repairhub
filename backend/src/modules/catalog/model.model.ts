@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+﻿import mongoose, { Schema, Document, Types } from 'mongoose';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -9,6 +9,7 @@ export interface IModel extends Document {
   name: string;
   brand: Types.ObjectId;
   deviceType: string;
+  colors?: string[];
   image?: string;
   status: 'active' | 'inactive';
   createdAt: Date;
@@ -20,6 +21,7 @@ const ModelSchema: Schema = new Schema({
   brand: { type: Schema.Types.ObjectId, ref: 'Brand', required: true },
   deviceType: { type: String, required: true },
   series: { type: String, default: "" },  // ADD THIS LINE
+  colors: { type: [String], default: [] },
   image: { type: String },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
 }, { timestamps: true });
@@ -45,3 +47,4 @@ const storage = multer.diskStorage({
 export const uploadModelImage = multer({ storage });
 
 export default mongoose.model<IModel>('Model', ModelSchema);
+
