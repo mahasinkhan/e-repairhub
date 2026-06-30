@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+﻿import { useEffect, useState, useCallback } from "react";
 import {
   Plus, X, RefreshCw, Tag, ToggleLeft, ToggleRight,
   Trash2, Edit, CheckCircle, XCircle, TrendingUp,
@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import httpClient from "../../services/httpClient.js";
 
 const EMPTY_FORM = {
-  code: "", description: "", type: "percentage", value: "",
-  minOrderAmount: "", maxDiscount: "", maxUses: "",
+  code: "", description: "", type: "flat", value: "",
+  minOrderAmount: "", maxUses: "",
   expiresAt: "", applicableTo: "all", brandName: "", serviceName: "",
   isActive: true,
 };
@@ -38,7 +38,6 @@ function CouponModal({ open, coupon, onClose, onSuccess }) {
         type:           coupon.type,
         value:          coupon.value,
         minOrderAmount: coupon.minOrderAmount || "",
-        maxDiscount:    coupon.maxDiscount || "",
         maxUses:        coupon.maxUses || "",
         expiresAt:      coupon.expiresAt ? coupon.expiresAt.slice(0, 10) : "",
         applicableTo:   coupon.applicableTo || "all",
@@ -68,7 +67,6 @@ function CouponModal({ open, coupon, onClose, onSuccess }) {
         code:           form.code.toUpperCase().trim(),
         value:          Number(form.value),
         minOrderAmount: Number(form.minOrderAmount) || 0,
-        maxDiscount:    form.maxDiscount ? Number(form.maxDiscount) : undefined,
         maxUses:        Number(form.maxUses) || 0,
         expiresAt:      form.expiresAt || undefined,
         brandName:      form.applicableTo === "brand"   ? form.brandName   : undefined,
@@ -123,28 +121,13 @@ function CouponModal({ open, coupon, onClose, onSuccess }) {
               placeholder="e.g. 20% off on all screen repairs" className={inputCls} />
           </div>
 
-          {/* Type + Value */}
+          {/* Value */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Discount Type *</label>
-              <select name="type" value={form.type} onChange={handleChange} className={inputCls}>
-                <option value="percentage">Percentage (%)</option>
-                <option value="flat">Flat Amount (₹)</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">
-                Value * {form.type === "percentage" ? "(%)" : "(₹)"}
-              </label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Discount Value (₹) *</label>
               <input type="number" name="value" value={form.value} onChange={handleChange}
-                placeholder={form.type === "percentage" ? "e.g. 20" : "e.g. 200"}
-                min="1" max={form.type === "percentage" ? 100 : undefined}
-                className={inputCls} />
+                placeholder="e.g. 200" min="1" className={inputCls} />
             </div>
-          </div>
-
-          {/* Min order + Max discount */}
-          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Min Order (₹)</label>
               <input type="number" name="minOrderAmount" value={form.minOrderAmount} onChange={handleChange}
@@ -302,7 +285,7 @@ export default function Support() {
             <p className="text-sm font-medium text-slate-500">No coupons yet</p>
             <button onClick={() => setModal({ open: true, coupon: null })}
               className="mt-3 text-orange-500 text-sm font-medium hover:underline">
-              Create your first coupon →
+              Create your first coupon â†’
             </button>
           </div>
         ) : (
@@ -328,27 +311,25 @@ export default function Support() {
                       </td>
                       <td className="px-4 py-3.5">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold ${
-                          coupon.type === "percentage" ? "bg-purple-50 text-purple-700" : "bg-blue-50 text-blue-700"
+                          "bg-blue-50 text-blue-700"
                         }`}>
-                          {coupon.type === "percentage" ? <Percent className="w-3 h-3" /> : <IndianRupee className="w-3 h-3" />}
-                          {coupon.type === "percentage" ? "%" : "Flat"}
+                          {<IndianRupee className="w-3 h-3" />}
+                          {"Flat"}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 font-bold text-slate-800">
-                        {coupon.type === "percentage" ? `${coupon.value}%` : `₹${coupon.value}`}
-                        {coupon.maxDiscount && coupon.type === "percentage" && (
-                          <p className="text-xs text-slate-400">Max ₹{coupon.maxDiscount}</p>
-                        )}
+                        {`₹${coupon.value}`}
+                        
                       </td>
                       <td className="px-4 py-3.5 text-slate-600">
                         {coupon.minOrderAmount > 0 ? `₹${coupon.minOrderAmount}` : "None"}
                       </td>
                       <td className="px-4 py-3.5 text-slate-600">
-                        {coupon.usedCount}{coupon.maxUses > 0 ? ` / ${coupon.maxUses}` : " / ∞"}
+                        {coupon.usedCount}{coupon.maxUses > 0 ? ` / ${coupon.maxUses}` : " / âˆž"}
                       </td>
                       <td className="px-4 py-3.5 text-slate-600">
-                        {coupon.applicableTo === "brand"   && <span className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded">📱 {coupon.brandName}</span>}
-                        {coupon.applicableTo === "service" && <span className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded">🔧 {coupon.serviceName}</span>}
+                        {coupon.applicableTo === "brand"   && <span className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded">ðŸ“± {coupon.brandName}</span>}
+                        {coupon.applicableTo === "service" && <span className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded">ðŸ”§ {coupon.serviceName}</span>}
                         {coupon.applicableTo === "all"     && <span className="text-xs text-slate-400">All orders</span>}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">
